@@ -1,52 +1,101 @@
-import subprocess
 import os
+import subprocess
 import logging
 
-def log_init():
-    log_folder = (f'{pathlib.Path(__file__).parent.absolute()}\logs')
+def bootup_function():
+    def log_init():
+        """Initialize logging for the script."""
+        import pathlib
+        import datetime
 
-    if not os.path.exists(log_folder):
-        os.makedirs(log_folder)
+        log_folder = f'{pathlib.Path(__file__).parent.absolute()}/logs'
 
-    log_file = os.path.join(log_folder, f"{datetime.datetime.now():%Y-%m-%d_%H-%M-%S}.log") # Name of the logfile will be YY-MM-DD_Hour-Minutes-seconds (Of the moment which the bot started)
+        if not os.path.exists(log_folder):
+            os.makedirs(log_folder)
 
-    logging.basicConfig(
-        filename=log_file,
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s]: %(message)s",   # Specify the log file Naming schema
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
-    logging.info("Script started.")
- 
-flag_file = "Firstr.flag"           # Specify the 1st time setup flag
+        log_file = os.path.join(
+            log_folder,
+            f"{datetime.datetime.now():%Y-%m-%d_%H-%M-%S}.log"
+        )
 
-if not os.path.exists(flag_file):
-    print("As this is the first the script is running, the script will install the depedencies.")
-    try:
-        subprocess.check_call(['pip', 'install', 'pathlib'])
-    except subprocess.CalledProcessError:
-        print(f"Error installing: pathlib")
-    import pathlib
-    import datetime
-    import install
-    log_init()
-    logging.info("First time setup, installing dependencies")
-    install.libraries([
-    'discord.py',
-    'googletrans==4.0.0-rc.1',                  # Check if the first time setup flag is present and if not, install the dependencies using the install.py file
-    'typing',
-    'requests',
-    'configparser',
-    'windows-curses',
-    'Pillow',
-    'deepl'
-])
-    with open(flag_file, "w") as file:
-        file.write("Flag indicating that the script has run")              # Create the first time setup flag
-else:
-    logging.info("Script as already ran before, skipping installing the dependencies ")
+        logging.basicConfig(
+            filename=log_file,
+            level=logging.INFO,
+            format="%(asctime)s [%(levelname)s]: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        )
+        logging.info("Script started.")
+    
+    flag_file = "Firasatar&a&.flag"  # Flag to indicate first-time setup
+
+    if not os.path.exists(flag_file):
+        import install
+
+        dependencies = [
+            'discord.py',
+            'googletrans==4.0.0-rc.1',
+            'typing',
+            'requests',
+            'configparser',
+            'windows-curses',
+            'Pillow',
+            'deepl'
+        ]
+
+        total_size = 0
+        dependencies_to_install = []
+
+        print("As this is the first time the script is running, dependencies will be installed.")
+
+        # Attempt to install pathlib separately
+        try:
+            subprocess.check_call(['pip', 'install', 'pathlib'])
+        except subprocess.CalledProcessError as e:
+            print(f"There was an error installing pathlib: {e}.")
+            input("\nPress enter to open the bug report page [https://github.com/Natpol50/AT-bot/issues]")
+            subprocess.run(['powershell', '-Command', f"start-Process {'https://github.com/Natpol50/AT-bot/issues'}"])
+            input('Press enter to exit...')
+            exit()
+
+        log_init()
+        logging.info("First-time setup, installing dependencies")
+
+        # Determine the size of each dependency and prepare the installation list
+        for dep in dependencies:
+            dep_size = install.get_package_size(dep)
+            if dep_size > 0:
+                dependencies_to_install.append(dep)
+            elif dep_size == -1:
+                print(f"Error retrieving size for package {dep}")
+            total_size += dep_size
+
+        # Install thoses dependencies (OR NOT)
+        if dependencies_to_install:
+            option = input(
+                f"You need to install these dependencies: {dependencies_to_install}.\n"
+                f"The total size is approximately {total_size:.2f} MB.\n"
+                "Do you wish to proceed (Y/N)? "
+            )
+            if option.lower() not in ["y", "yes"]:
+                exit()
+
+            install.libraries(dependencies_to_install)
+            
+
+        # Create the flag file to indicate setup has been completed
+        with open(flag_file, "w") as file:
+            file.write(
+                "A simple flag indicating that the script has run before.\n"
+                "Asha thanks you for reading this, but seriously, don't you have anything else to do?"
+            )
+        del install
+    else:
+        log_init()
+        logging.info("Script has already run before, skipping dependency installation.")
 
 
+bootup_function()
+del bootup_function
 
 import discord
 from discord.ext import commands , tasks
@@ -62,218 +111,148 @@ import Tokensverif
 from io import BytesIO
 from PIL import Image
 import asyncio
+import pathlib
+import datetime
+import Displays
 
 
+def Bot_picker(input_list):
+    """
+    Displays a CLI menu to choose an item from the input_list using the curses library.
 
+    Parameters:
+    - input_list: A list of strings to be displayed as selectable options.
 
-os.system("title ATbot, Welcome ! ") #Welcome page / Copyright ?
-print("""                      .::^^^^:..                     
-                :!J5GB#&&@@@&&&#BPY7~.               
-            .!5B&@@@&&&&&&&&&&&&&&@@@&GJ^            
-          ~5&@@&&###################&&@@@B?:         
-        !B@@&###########################&@@&Y:       
-      ^G@@&#######&&&&&&##################&@@&?      
-     7&@&########&#YYPB#&&##################&@@G:    
-    J@@&###&&&&&&&Y^^^^~JB&##############&&##&&@B:   
-   7@@####&BGGPP55!^~::^~755PGB#&&&&##&&&GG&###@@B.  
-  :&@&####&PY#BP?~:::~?JJ5#&@@@@@@@@@@@@@#B&###&@@J  
-  ?@&#####&BJ#@@@&G?7JJJJ&@&#&&@@@@@@@@@@@@#####&@#. 
-  P@&######&5J#@@@#JJJJJJP@@@@@@@@@@@@@@@@&#####&@@~ 
-  B@&######&#J~G@@Y?JJJJJ?YPB##&@@@@@@@@&&######&@@! 
-  P@&#######&B!!G#JJJJJJJ??J5G#&@@@@@@&&########&@@^ 
-  7@&########&#PJJJJJJJ?J5B&@@@@@@@@&&##########&@B  
-  .B@&########&&BYJJJJ?5#@@@@@@@@&#BB##&&&&#&&#&@@7  
-   ~&@&#########&G?J?JB@@@@@@@@BYJ????5GGB##BB&@@5   
-    !&@&########&G??Y#@@@@@@@#Y???????????JJ??YPP.   
-     ^B@&#######&G?J#@@@@@@@G????????????????????^   
-      .Y&@&#####&5?Y&GP#@@@G?????5GG5????????????7.  
-        :Y&@&&###JJJJY&@@@#?????J#  #J??JG#5!?????:  
-          :?G&@@GJJ?Y&@@@@Y7?????YP Y???Y5^ .?????^  
-             :75B&#B#@@@@@&PJ??Y5Y???????!^~7?????:  
-                 :~7Y5GGGGBBP?77??~^~!777777?????7   
-                                         .!7???7!:         
-         Welcome to Asha's Autotranslation bot ! 
-        Please, do not claim property of this code   """)
-input("""
-      
-               press enter to continue""")
+    Returns:
+    - The selected item from the input_list.
+    """
 
-os.system('cls') # Clearing CLI to have no waste 
-
-
-def BotPicker(input_list):  # Bot / Profile picker, using the Curses library, create a fake GUI in CLI
-
+    # Initialize the curses environment
     stdscr = curses.initscr()
-    curses.cbreak()
-    stdscr.keypad(True)         
-    curses.noecho()
+    curses.cbreak()  # Disable line buffering
+    stdscr.keypad(True)  # Enable special keys (e.g., arrow keys)
+    curses.noecho()  # Do not display typed characters
 
-    selected_index = 0
+    selected_index = 0  # Track the currently selected index
 
-    while True:
-        stdscr.clear()
-        #Display instruction text
-        stdscr.addstr("\n Choose a bot, or choose \'New bot\' to create a new bot/profile. \n \n ")
-        # Display the list with one element highlighted
-        stdscr.addstr("")
-        for index, element in enumerate(input_list):
-            if index == selected_index:
-                stdscr.addstr(f"{index + 1}. {element}\n", curses.A_REVERSE)
-            else:
-                stdscr.addstr(f"   {element}\n")
+    try:
+        while True:
+            stdscr.clear()  # Clear the screen
+            
+            # Display instruction text
+            stdscr.addstr("\nChoose a bot, or choose 'New bot' to create a new bot/profile.\n\n")
 
-        stdscr.refresh()
+            # Display the list with one element highlighted
+            for index, element in enumerate(input_list):
+                if index == selected_index:
+                    stdscr.addstr(f"{index + 1}. {element}\n", curses.A_REVERSE)  # Highlight selected item
+                else:
+                    stdscr.addstr(f"   {element}\n")
 
-        key = stdscr.getch()
+            stdscr.refresh()  # Refresh the screen to reflect changes
 
-        if key == curses.KEY_DOWN:
-            selected_index = min(selected_index + 1, len(input_list) - 1)
-        elif key == curses.KEY_UP:
-            selected_index = max(selected_index - 1, 0)
-        elif key == 10:  # Enter key
-            curses.endwin()  # Clean up the curses environment
-            return input_list[selected_index]
+            key = stdscr.getch()  # Get user input
 
-config = configparser.ConfigParser()
-configfile = (f'{pathlib.Path(__file__).parent.absolute()}\config.ini')
-if not os.path.exists(configfile):                 # Open/Create the config.ini file
-    with open(configfile, 'w') as file:
-        file.write(" ")
+            # Navigate through the list
+            if key == curses.KEY_DOWN:
+                selected_index = min(selected_index + 1, len(input_list) - 1)
+            elif key == curses.KEY_UP:
+                selected_index = max(selected_index - 1, 0)
+            elif key == 10:  # Enter key
+                break  # Exit the loop to return the selected item
 
+    finally:
+        # Clean up the curses environment
+        curses.endwin()
 
-os.system("title ATbot, ConfigPicker ")        # Change windows name
-config.read(configfile)
-Botlist = config.sections()   # Pull the bot/config names
-Botlist.append('New bot')     # Add the New bot option
-Cbot =BotPicker(Botlist)      # Start the bot/profile picker 
-print(" ")
+    return input_list[selected_index]
 
-os.system('cls') # Clearing CLI to have no waste 
-os.system("title ATbot, New bot : ")
-if Cbot == 'New bot' : 
-    Name = input ("Choose a name for the new bot : ")
-    os.system("title New bot, discord bot API key ")
-    print("""                              .:~!7?JYY7.                    .?JJJ?7!^:.                            
-                         :~7J5PGGP5J7~::..::^^~~~~!!!~~~^^::.:^~!7?Y5PPPY?!^.                       
-                     .~?YPGGG5J7~~~!7?JY5PPPPGGGGGPYYYYYYYYYYYYJJ?7!!!7?YPGGPY7^.                   
-                   :7YGGGPYJ???Y5PGGGGGGGGGGPPPPPG5777??????????JJJYYYYJ???J5PGG5?^                 
-                  ~5GGP5YY5PPGGGGGPPPPPPPPPPPPPPPPPPBPJ?????????????????JJYYJYY5GGP~                
-                 ~5GPPPPPGGGPPPPPPPPPPPPPPPPPPPPPPB@@@BPPPPPPPPPPPPY?????????JJYPGGP~               
-                ~5GPPPPGPPPPPPPPPPPPPPPPPPPPPPPPPPB@@&5YYYYYYYYYPGG5???????????7?YPGP~              
-               ^5GPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPB@@@GYJ??????7YGG5????????YB#GJ7JPG5^             
-              .YGPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPB@@@@@@G55PY?JPBG5????????5&@@&J7?PGY.            
-              ?GPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPB@@@&BGY??P5Y&@@#577??????JP#&#J??JPG?            
-             !PGPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPB@@&YYB#BP##&@@@@&BPG##P????JYJ????JGG!           
-            :5GPPPPPPPPPPPPPPPPPPPPGGGGGGPPPPPPPPPB@@&J5@@@@@@@&&&@@@@@@@B????????????5G5:          
-            ?PPPPPPPPPPPPPPPPPPPGGGP5555PGGGPPPPPPG&@&5J&@@@&#B####B&@@@@P77???????????PG?          
-           ^5GPPPPPPPPPPPPPPPPPGP?~:.  .:~?PGPPPPG5?55P#@@@&GB@@@@@#G#@@@@G5Y??????????YGP^         
-           ?GPPPPPPPPPPPPPPPPPGJ:          :JGPPPG57P@@@@@@BPB@@@@@#PG@@@@@@#???????????PG?         
-          ^5GPPPPPPPPPPPPPPPPGY             .YGPPG577?Y#@@@&GPGB#BGPP#@@@@BPY???????????5GP:        
-          !PGPPPPPPPPPPPPPPPPG7              7GPPG57~  ~#@@@&#GGGGGB&@@@@P77????????????JPG!        
-         .JGPPPPPPPPPPPPPPPPPGJ              YGPPG5?7!:?&@@@@@@@@@@@@@@@@B???????????????PGY        
-         ^5GPPPPPPPPPPPPPPPPPPG?.          .JGPPPG5???7Y#&#GB#@@@@@&#GB&&G???????????????YGP:       
-         !PPPPPPPPPPPPPPPPPPPPPG57:.    .^75GPPPPG5????7???77?5@@@B??7???7???JY5PY???????JPG~       
-         ?GPPPPPPPPPPPPPPPPPPPPPGGP5YJJY5PGGPPPPPPP555555Y55YYY55Y?7????JY55PGGPPY????????PG7       
-        .YGPPPPPPPPPPPPPPPPPPPPPGPGGGGGGGGPPPPPPPPPGGGGGGGPPPPP555YJY5PPPGPGPPPPPGP???????5G?       
-        .YGPPPPPPPPPPGPB@@@@@@@GPGPPPPPPPPPPPP&@@@@@@@@@@@@@@&&#BPPPGGGGPPB@@@@@GPP??????5PGJ       
-         ?PGGPPPPPPPGPG@@@@@@@@&PPPPGGGPPPPPPP&@@@@@@@@@@@@@@@@@@@#PPPP5PP#@@@@@BPP???J5PGGG7       
-          ~YPGGPPPPPPP&@@@@&@@@@#PPP55PPGGGGPP&@@@@&BBB######&@@@@@&PPPJPP#@@@@@GPPJYPGGGG5~        
-            ~JPGGGPP5#@@@@&G&@@@@BPG7 .:^~!YGP&@@@@&PP5?77!75GB@@@@@&PPPPP#@@@@@GPPGGGGPJ~          
-              :!JPGPB@@@@&GPB@@@@@GPP^     7GP&@@@@&PG7     ^PP#@@@@@GPPPP#@@@@@GPGGPJ!:            
-                :5PG@@@@@BPGP#@@@@&PP5.    ?GP&@@@@&PG7 ....!GP#@@@@@GPGPP#@@@@@GPP~.               
-               .JPP&@@@@#PPYPG&@@@@#5GJ    7GP&@@@@&PP5Y5Y55P5G&@@@@&GG5PP#@@@@@GG5.                
-               7PP#@@@@&GG5?PPG&@@@@BPG!   7GP&@@@@&BBBBBBBB#&@@@@@&BGY~PPB@@@@@GP5.                
-              ^PPB@@@@&GPPPPPPPB@@@@@GPP^  7GP&@@@@@@@@@@@@@@@@@@@#BGJ.:PPB@@@@@GP5.                
-             :YPG@@@@@@&&&&&&&&&@@@@@&PG5. ?GP&@@@@@@@@@@@@@@&&&#BPJ~  :PP#@@@@@GG5.                
-            .JPP&@@@@@@@@@@@@@@@@@@@@@#5GJ 7GP&@@@@&GGGGGGGGPP5Y?!:    :PP#@@@@@GG5.                
-            !PP#@@@@@#############@@@@@BPG!7GP&@@@@&PG?::::::..        :PP#@@@@@GG5.                
-           ^5PB@@@@@#P5????????JPG&@@@@@GPP5PP&@@@@&PG!                :PP#@@@@@GG5.                
-          :YPG@@@@@&GP~         ?GG&@@@@&PPGPP&@@@@&PG7                :PP#@@@@@GG5.                
-          ?GG&@&&&&BP7          .5GB&&&&&#PGGG&&&&&&GG7                :PG#&&&&&BG5.                
-          ^JY55555YJ!.           :J5PPPPPP5YJ5PPPPPP5J:                 !Y5PPPPP5Y~                 
-             ....                  ........  ........                     .......                  \n""")
+def config_init():
+    """
+    Sets up the configuration file for ATbot, 
+    it allows the user to select multiple profiles.
+    """
+    # We initialise the configuration file, we must not forget to make it accessible from everything.
+    global config
+    config = configparser.ConfigParser()
+    global config_file
+    config_file = f'{pathlib.Path(__file__).parent.absolute()}/config.ini'
 
-    print('  As you chose New bot, you\'ll need a discord bot API key. \n If you do not know how to get one, here\'s a tutorial : https://rapidapi.com/volodimir.kudriachenko/api/DiscordBot/details')
-    Test = False
-    while Test == False : 
-        DSapi_k = input("\n Discord bot API key : ")
-        print("Starting discord token verification...")       # Discord token verification using the Tokenverif.py file
-        logging.info("Starting discord token verification.")
-        Test = Tokensverif.DS_token(DSapi_k)
-    logging.info("Token verification was successful, continuing...")
+    if not os.path.exists(config_file):
+        with open(config_file, 'w') as file:
+            file.write(" ")  # Create an empty config file
 
+def setup_environment():
+    """
+    Sets up the initial environment for the ATbot configuration.
+    This includes creating a configuration file if it doesn't exist,
+    allowing the user to pick or create a bot configuration, and verifying
+    API keys for Discord and Deepl (We won't be needing a google translate one for now...).
+    """
     
-    os.system("title New bot, Deepl API key ")
-    print("""
-                                             ..::::::..                                             
-                                          ..::::::::::::..                                          
-                                      ..::::::::::::::::::::..                                      
-                                  ..::::::::::::::::::::::::::::..                                  
-                               ..::::::::::::::::::::::::::::::::::..                               
-                           ..::::::::::::::::::::::::::::::::::::::::::..                           
-                        .::::::::::::::::::::::::::::::::::::::::::::::::::.                        
-                      .:::::::::::::::::...::::::::::::::::::::::::::::::::::.                      
-                      :::::::::::::::.       .::::::::::::::::::::::::::::::::                      
-                      :::::::::::::::         .:::::::::::::::::::::::::::::::                      
-                      :::::::::::::::          .::::::::::::::::::::::::::::::                      
-                      ::::::::::::::::.     ..    ..::::::::::::::::::::::::::                      
-                      :::::::::::::::::::::::::..    ..:::::::::::::::::::::::                      
-                      :::::::::::::::::::::::::::::..    .      .:::::::::::::                      
-                      :::::::::::::::::::::::::::::::::.         .::::::::::::                      
-                      ::::::::::::::::::::::::::::::::::.        .::::::::::::                      
-                      ::::::::::::::::::::::::::::::.::::.      .:::::::::::::                      
-                      ::::::::::::::::::::::::::..    ::::::..::::::::::::::::                      
-                      ::::::::::::::::...  ....    ..:::::::::::::::::::::::::                      
-                      :::::::::::::::.         ..:::::::::::::::::::::::::::::                      
-                      :::::::::::::::         .:::::::::::::::::::::::::::::::                      
-                      :::::::::::::::.       .::::::::::::::::::::::::::::::::                      
-                      .::::::::::::::::.....:::::::::::::::::::::::::::::::::.                      
-                        ..::::::::::::::::::::::::::::::::::::::::::::::::..                        
-                            ..::::::::::::::::::::::::::::::::::::::::..                            
-                                ..::::::::::::::::::::::::::::::::..                                
-                                   ..:::::::::::::::::::::::::::.                                   
-                                       ..:::::::::::::::::::::::                                    
-                                           ..:::::::::::::::::::                                    
-                                              ..::::::::::::::::                                    
-                                                  ..::::::::::::                                    
-                                                      ..::::::::                                    
-                                                         ..:::::                                    
-:::::::::::::..                                              ...                       .::::        
-::::::::::::::::.                                                                      .::::        
-::::.       .:::::.        ....:....             ....:....        ..    ....:...       .::::        
-::::.         :::::      .::::::::::::.       .::::::::::::.     .:::..:::::::::::.    .::::        
-::::.         .::::.   .::::..    .::::.     .::::.    ..::::.   .::::::... ...::::.   .::::        
-::::.          ::::.   ::::.........::::.   .::::.........::::   .:::::        .::::.  .::::        
-::::.         .::::.  .::::::::::::::::::   ::::::::::::::::::.  .::::.         ::::.  .::::        
-::::.        .::::.   .::::..............   :::::..............  .:::::         ::::.  .::::        
-::::.      ..::::.     .:::..      ...      .::::.       ...     .::::::.     .::::.   .::::.       
-::::::::::::::::.       .::::::::::::::       .:::::::::::::.    .::::::::::::::::.    .::::::::::::
-::::::::::::..            ..::::::::..          ..:::::::..      .::::...::::::..       ::::::::::::
-                                                                 .::::                              
-                                                                 .::::                              
-                                                                 .::::                             """)
-    
-    print('  Now, you\'ll need a Deepl API (Free or Paid, both works fine for a reasonable amount of messages per month)\n If you do not know how to find yours, here\'s a tutorial : https://support.deepl.com/hc/en-us/articles/360020695820-Authentication-Key')
-    
-    Test = False
-    while Test == False : 
-        DPLapi_k = input("\n Deepl API key : ")
-        print("Starting deepl token verification...")       # Deepl token verification using the Tokenverif.py file
-        logging.info("Starting deepl token verification.")
-        Test = Tokensverif.DPL_token(DPLapi_k)
-    logging.info("Token verification was successful, continuing... \n")
+    # First, we welcome the user.
+    Displays.welcome()
+    os.system('cls')  # Clear the screen
+
+    # And then, ask the user which bot he wanna use.
+    os.system("title ATbot - Config Picker")
+    config.read(config_file)
+    bot_list = config.sections()
+    bot_list.append('New bot')  # Adds a 'New bot' option, for multiple profiles.
+    global selected_bot
+    selected_bot = Bot_picker(bot_list)
+    print(" ")
+
+    os.system('cls')
+
+    if selected_bot == 'New bot':
+        # Handle new bot creation
+        os.system("title ATbot - New Bot")
+        selected_bot = input("Choose a name for the new bot: ")
+
+        # First, we get and verify the discord bot API key.
+        Displays.Dis_api()
+        discord_key_valid = False
+        while not discord_key_valid:
+            discord_api_key = input("\nDiscord bot API key: ")
+            print("Starting Discord token verification...")
+            logging.info("Starting Discord token verification.")
+            discord_key_valid = Tokensverif.DS_token(discord_api_key)
+        logging.info("Token verification was successful, continuing...")
+
+        # Then, we do the same thing with the Deepl one.
+        Displays.deepl()
+        deepl_key_valid = False
+        while not deepl_key_valid:
+            deepl_api_key = input("\nDeepl API key: ")
+            print("Starting Deepl token verification...")
+            logging.info("Starting Deepl token verification.")
+            deepl_key_valid = Tokensverif.DPL_token(deepl_api_key)
+        logging.info("Token verification was successful, continuing...\n")
+
+        # And finally write the bot informations onto the config file.
+        config[f"{selected_bot}"]={
+        "discord" : discord_api_key,
+        "deepl" : deepl_api_key
+        }                               
+        with open(config_file,"w") as File_object:
+            config.write(File_object)
+
+# Call the setup function
+config_init()
+setup_environment()
+
+del Bot_picker
+del config_init
+del setup_environment
     
 
-    config[f"{Name}"]={
-    "discord" : DSapi_k,
-    "deepl" : DPLapi_k
-    }                               # Writing the config into the config.ini file
-    with open(configfile,"w") as fichier_objet:
-        config.write(fichier_objet)
-    Cbot = Name
+
+Cbot = selected_bot
+
 os.system(f"title Bot : {Cbot} , Starting...")
-print(f'\n Config file is {configfile} \n ')       # Confirming file position
-logging.info(f'\n Config file is {configfile} \n ')
+print(f'\n Config file is {config_file} \n ')       # Confirming file position
+logging.info(f'\n Config file is {config_file} \n ')
 
 try:
     response = requests.get("https://discord.com/", timeout=5)
