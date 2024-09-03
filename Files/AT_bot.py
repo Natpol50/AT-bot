@@ -2,9 +2,42 @@ import os
 import subprocess
 import logging
 
+
+
+
+"""
+//////////////////
+///////BOOT///////
+//////////////////
+"""
+
 def bootup_function():
+    """
+    Verifies if everything seems right and initialize logging.
+    
+    This function will : 
+     - Verify if the script has been used before (if not, installs the required libraries)
+     - Initialize the logging
+
+    It's also meant to verify if there's an update to the bot (coming soon)
+    
+    Args:
+    - None
+    
+    Returns:
+    - None
+    """
     def log_init():
-        """Initialize logging for the script."""
+        """
+        Initialize logging for the script.
+        Used after the first time setup flag has been checked
+
+        Args:
+        - None
+    
+        Returns:
+        - None
+        """
         import pathlib
         import datetime
 
@@ -29,7 +62,7 @@ def bootup_function():
     flag_file = "Firasatar&a&.flag"  # Flag to indicate first-time setup
 
     if not os.path.exists(flag_file):
-        import install
+        import Dependency_installer as install
 
         dependencies = [
             'discord.py',
@@ -79,7 +112,7 @@ def bootup_function():
             if option.lower() not in ["y", "yes"]:
                 exit()
 
-            install.libraries(dependencies_to_install)
+            install.install_packages(dependencies_to_install)
             
 
         # Create the flag file to indicate setup has been completed
@@ -94,8 +127,15 @@ def bootup_function():
         logging.info("Script has already run before, skipping dependency installation.")
 
 
-bootup_function()
-del bootup_function
+
+
+
+"""
+///////////////////////////////////////////////////
+/////// Configuration,bootup and setting up ///////
+///////////////////////////////////////////////////
+"""
+
 
 import discord
 from discord.ext import commands , tasks
@@ -107,7 +147,7 @@ from listlist import *
 import requests
 import configparser
 import curses
-import Tokensverif
+import Tokenverif
 from io import BytesIO
 from PIL import Image
 import asyncio
@@ -120,11 +160,11 @@ def Bot_picker(input_list):
     """
     Displays a CLI menu to choose an item from the input_list using the curses library.
 
-    Parameters:
-    - input_list: A list of strings to be displayed as selectable options.
+    Args:
+    - input_list(list): A list of strings to be displayed as selectable options.
 
     Returns:
-    - The selected item from the input_list.
+    - str: The selected item from the input_list.
     """
 
     # Initialize the curses environment
@@ -162,7 +202,7 @@ def Bot_picker(input_list):
                 break  # Exit the loop to return the selected item
 
     finally:
-        # Clean up the curses environment
+        # Cleans up the curses environment
         curses.endwin()
 
     return input_list[selected_index]
@@ -171,11 +211,16 @@ def config_init():
     """
     Sets up the configuration file for ATbot, 
     it allows the user to select multiple profiles.
+    
+    Args:
+    - None
+
+    Returns:
+    - None
     """
-    # We initialise the configuration file, we must not forget to make it accessible from everything.
-    global config
+    # There, we initialise the configuration file, we must not forget to make it accessible from everything.
+    global config, config_file
     config = configparser.ConfigParser()
-    global config_file
     config_file = f'{pathlib.Path(__file__).parent.absolute()}/config.ini'
 
     if not os.path.exists(config_file):
@@ -188,18 +233,25 @@ def setup_environment():
     This includes creating a configuration file if it doesn't exist,
     allowing the user to pick or create a bot configuration, and verifying
     API keys for Discord and Deepl (We won't be needing a google translate one for now...).
-    """
-    
-    # First, we welcome the user.
-    Displays.welcome()
-    os.system('cls')  # Clear the screen
 
+    Args:
+    - None
+
+    Returns:
+    - None
+    """
+    global selected_bot
+
+
+    # First, we welcome the user.
+    Displays.Welcome()
+    os.system('cls')  # Clear the screen
+    
     # And then, ask the user which bot he wanna use.
     os.system("title ATbot - Config Picker")
     config.read(config_file)
     bot_list = config.sections()
     bot_list.append('New bot')  # Adds a 'New bot' option, for multiple profiles.
-    global selected_bot
     selected_bot = Bot_picker(bot_list)
     print(" ")
 
@@ -211,23 +263,27 @@ def setup_environment():
         selected_bot = input("Choose a name for the new bot: ")
 
         # First, we get and verify the discord bot API key.
-        Displays.Dis_api()
+        Displays.DS_api()
         discord_key_valid = False
         while not discord_key_valid:
-            discord_api_key = input("\nDiscord bot API key: ")
+            discord_api_key = input("\nDiscord bot API key (token): ")
             print("Starting Discord token verification...")
             logging.info("Starting Discord token verification.")
-            discord_key_valid = Tokensverif.DS_token(discord_api_key)
+            discord_key_valid = Tokenverif.DS_token(discord_api_key)
+            if not discord_key_valid :
+                print('Please, provide a correct bot token')
+        print("The token seems good, continuing...")
         logging.info("Token verification was successful, continuing...")
 
         # Then, we do the same thing with the Deepl one.
-        Displays.deepl()
+        Displays.DPL_api()
         deepl_key_valid = False
         while not deepl_key_valid:
             deepl_api_key = input("\nDeepl API key: ")
             print("Starting Deepl token verification...")
             logging.info("Starting Deepl token verification.")
-            deepl_key_valid = Tokensverif.DPL_token(deepl_api_key)
+            deepl_key_valid = Tokenverif.DPL_token(deepl_api_key)
+        print("The token seems good, continuing...")
         logging.info("Token verification was successful, continuing...\n")
 
         # And finally write the bot informations onto the config file.
@@ -238,144 +294,253 @@ def setup_environment():
         with open(config_file,"w") as File_object:
             config.write(File_object)
 
-# Call the setup function
+def bot_bootup(selected_bot, config_file, config):
+    """
+    Initializes and starts up the bot by performing the following tasks:
+    1. Sets the console title and prints the configuration file location.
+    2. Checks the connectivity to Discord's website.
+    3. Retrieves API keys from the configuration file.
+    4. Initializes Deepl and Google translators.
+    5. Sets up the Discord bot with (what is think is) appropriate permissions and intents.
+
+    Args:
+    - selected_bot (str): The name of the bot to be started.
+    - config_file (str): Path to the configuration file.
+    - config (dict): Configuration dictionary containing API keys and other settings.
+
+    Returns:
+    - None
+
+    Raises:
+    - SystemExit: Exits the program if the request to Discord.com fails.
+
+    
+    """
+    # Define global variables
+    global Discord_api_key, Deepl_translator, gt, bot, startup_time
+    startup_time = datetime.datetime.now()
+
+    # Set the console window title
+    os.system(f"title Bot : {selected_bot} , Starting...")
+
+    # Print and log the configuration file path
+    print(f'\nConfig file is {config_file}\n')
+    logging.info(f'\nConfig file is {config_file}\n')
+
+    # Test connectivity to Discord.com
+    try:
+        response = requests.get("https://discord.com/", timeout=5)
+        print("The request to Discord.com was successful\n")
+    except Exception as e:
+        print("The request to Discord.com was unsuccessful")
+        logging.critical("Connection to discord.com was unsuccessful. The program will close.")
+        logging.critical(f"Error code: {e}")
+        print(f"Maybe bad internet? Error code: {e}")
+        input("Press Enter to exit...")
+        exit()
+
+    # Retrieve API keys from the configuration file
+    Discord_api_key = config.get(selected_bot, 'discord')
+    Deepl_api_key = config.get(selected_bot, 'deepl')
+
+    # Initialize Deepl and Google translators
+    Deepl_translator = deepl.Translator(Deepl_api_key)
+    gt = Translator()
+
+    # Set up the Discord bot
+    print(f"Running on discord.py version {discord.__version__}")
+    logging.info(f"Running on discord.py version {discord.__version__}")
+
+    intents = discord.Intents.default()
+    intents.message_content = True
+    intents.reactions = True  # Set permissions for the bot
+
+    bot = commands.Bot(command_prefix='ATbot.', intents=intents)
+    bot.remove_command('help')  # Remove the default help command
+
+
+"""
+//////////////////////
+///////Bot code///////
+//////////////////////
+"""
+
+# First, we load everything to avoid any bot not defined error, then we load the bot code.
+bootup_function()
+del bootup_function
+
+
 config_init()
 setup_environment()
-
+bot_bootup(selected_bot,config_file,config)
 del Bot_picker
 del config_init
 del setup_environment
-    
 
+def ASCII(image_url, width, height):
+    """
+    Converts an image from a URL to an ASCII art representation.
 
-Cbot = selected_bot
+    Args:
+    - image_url (str): URL of the image to be converted.
+    - width (int): Width of the resulting ASCII art.
+    - height (int): Height of the resulting ASCII art.
 
-os.system(f"title Bot : {Cbot} , Starting...")
-print(f'\n Config file is {config_file} \n ')       # Confirming file position
-logging.info(f'\n Config file is {config_file} \n ')
+    Returns:
+    - str: ASCII art representation of the image, or an error message if conversion fails.
+    """
+    ASCII_CHARS = "@B%8WM#*oahkbdpwmZO0QCJYXzcvnxrjft/\\|()1[]-_+~<>i!lI;:,\"^`'. "
 
-try:
-    response = requests.get("https://discord.com/", timeout=5)
-    print ("The request to Discord.com was successfull \n")
-except Exception as e:
-    print ("The request to Discord.com was unsuccessfull")             # Discord connection test (redundancy)
-    logging.critical("Connection to discord.com was unssuccessfull, the program closed.")
-    logging.critical(f"Errorcode : {e}")
-    print(f"Maybe bad internet ? Error code : {e}")
-    input()
-    quit()
-
-discord_api_key = config.get(Cbot, 'discord') # Using the config file to get the API tokens for Deepl and Discord
-deepl_api_key = config.get(Cbot,'deepl')
-
-
-
-Traduire = deepl.Translator(deepl_api_key)
-
-gt = Translator()
-
-print(f"Running on discord.py version {discord.__version__}")               
-logging.info(f"Running on discord.py version {discord.__version__}")     
-
-intents=discord.Intents.default()
-intents.message_content = True 
-intents.reactions = True                 # Creating the bot autorisations to have access to what it need
-bot = commands.Bot(command_prefix='ATbot.', intents=intents)
-bot.remove_command('help')
-
-
-def ASCII(image_url, width , height):
-    ASCII_CHARS = "@B%8WM#*oahkbdpwmZO0QCJYXzcvnxrjft/\|()1[]-_+~<>i!lI;:,\"^`\'. "
     try:
-        # Open and download the image from the URL
+        # Download the image from the URL
         response = requests.get(image_url)
-        img = Image.open(BytesIO(response.content))
+        response.raise_for_status()  # Raise an error for bad HTTP responses
 
-        # Resize the image while maintaining aspect ratio
+        # Open the image and resize it while maintaining aspect ratio
+        img = Image.open(BytesIO(response.content))
         img = img.resize((width, height))
 
         # Convert the image to grayscale
         img = img.convert("L")
 
-        img = Image.eval(img, lambda x: 255 - x)  # Invert colors by subtracting from 255
+        # Invert the colors to fit ASCII art conventions (dark = ASCII char, light = space)
+        img = Image.eval(img, lambda x: 255 - x)
 
-        # Calculate the aspect ratio to adjust the aspect ratio of ASCII characters
-        aspect_ratio = img.height / img.width
-        new_height = int(aspect_ratio * width)
-
-        # Create an ASCII image
+        # Create the ASCII art
         ascii_img = ""
-        for i in range(new_height):
+        for i in range(height):
             for j in range(width):
                 pixel_value = img.getpixel((j, i))
-                ascii_img += ASCII_CHARS[pixel_value * (len(ASCII_CHARS) - 1) // 255]
+                ascii_char = ASCII_CHARS[pixel_value * (len(ASCII_CHARS) - 1) // 255]
+                ascii_img += ascii_char
             ascii_img += "\n"
 
         return ascii_img
 
     except Exception as e:
-        logging.error(f"An error occured while converting profile picture of the bot to ASCII")
-        return ("An ewwor occuwed, no image, sowwy >-<")
+        # Log the error and return a user-fwiendly message 0v0
+        logging.error(f"An error occurred while converting the image to ASCII: {e}")
+        return "An ewwor occuwed, no image, sowwy >-<. Pwease twy again l8tr."
+
         
  
-startup_time = datetime.datetime.now()
 
 def format_uptime(uptime):
+    """
+    Formats a timedelta object into a human-readable string representing uptime.
+
+    Args:
+    - uptime (datetime.timedelta): The timedelta object representing the uptime.
+
+    Returns:
+    - uptime_str (str): A string representing the uptime in days, hours, minutes, and seconds.
+    """
     days = uptime.days
     seconds = uptime.seconds
     hours, remainder = divmod(seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
-    
-    uptime_str = ""
+
+    # Initialize an empty list to collect time units
+    time_units = []
+
+    # Add days,hours,minutes and seconds to the list if greater than zero
     if days > 0:
-        uptime_str += f"{days} day{'s' if days > 1 else ''}, "
+        time_units.append(f"{days} day{'s' if days > 1 else ''}")
     if hours > 0:
-        uptime_str += f"{hours} hour{'s' if hours > 1 else ''}, "
+        time_units.append(f"{hours} hour{'s' if hours > 1 else ''}")
     if minutes > 0:
-        uptime_str += f"{minutes} minute{'s' if minutes > 1 else ''}, "
-    uptime_str += f"{seconds} second{'s' if seconds > 1 else ''}"
-    
+        time_units.append(f"{minutes} minute{'s' if minutes > 1 else ''}")
+    if seconds > 0:
+        time_units.append(f"{seconds} second{'s' if seconds > 1 else ''}")
+
+    # Join the time units with commas, and ensure proper formatting
+    uptime_str = ', '.join(time_units)
+
     return uptime_str
 
 
-@tasks.loop(seconds=10)
+
+@tasks.loop(seconds=60)
 async def status():
-        uptime = datetime.datetime.now() - startup_time
-        server_count = len(bot.guilds)
-        if server_count == 0 or server_count > 1 :
-            await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f'{server_count} servers'))
-        else : 
-            await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f'{server_count} server'))
-        logging.info(f"The bot has been running for {format_uptime(uptime)}.")
-        os.system(f"title  Bot : {Cbot} , Uptime : {format_uptime(uptime)}.")
+    """
+    Updates the bot's status and logs the uptime every 60 seconds.
+    It allows us the have a rough idea of how long the bot has ran, especially if no errors are risen.
+
+    Args:
+    - None
+
+    Returns:
+    - None
+    """
+    # Calculate the uptime and server count, to update status of both the bot, and the console.
+    uptime = datetime.datetime.now() - startup_time
+    server_count = len(bot.guilds)
+    
+    # Set the status message based on the number of servers
+    if server_count == 1:
+        status_message = f'{server_count} server'
+    else:
+        status_message = f'{server_count} servers'
+    
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status_message))
+    
+    # Log the uptime and update the console title
+    uptime_str = format_uptime(uptime)
+    logging.info(f"The bot has been running for {uptime_str}.")
+    os.system(f"title Bot : {selected_bot} , Uptime : {uptime_str}.")
+
            
 
 
 @bot.event
 async def on_ready():
-    os.system('cls') # Clearing CLI to have no waste 
-    print(f"Connected as {bot.user.name} (ID : {bot.user.id}) \n ")
-    print(ASCII(bot.user.avatar,20,10))
-    logging.info(f"Connected as {bot.user.name} (ID : {bot.user.id})")
-    print(" ")
+    """
+    Event handler for when the bot is ready.
+    Clears the command line interface, prints bot information,
+    and lists the bot's permissions in each server (guild) it is part of on the CLI.
+
+    Args:
+    - None
+
+    Returns:
+    - None
+    """
+    # Clear the command line interface
+    os.system('cls')
+
+    # Print bot connection details
+    bot_info = f"Connected as {bot.user.name} (ID: {bot.user.id})"
+    print(f"\n{bot_info}\n")
+    print(ASCII(bot.user.avatar, 20, 10))
+    logging.info(bot_info)
+
+    # List bot permissions in each guild
     for guild in bot.guilds:
-        print(f"Bot autorisations on {guild.name} (server) :")
-        logging.info(f"Bot autorisations on {guild.name} (server) :")
+        print(f"Permissions in guild: {guild.name}")
+        logging.info(f"Permissions in guild: {guild.name}")
+
         try:
             for channel in guild.channels:
                 try:
-                    permissions = channel.permissions_for(guild.me)                             # Confirming connection and displaying the servers and channels it have access to
-                    print(f"    - {channel.name}: {permissions}")
-                    logging.info(f"    - {channel.name}: {permissions}")
+                    # Get and print permissions for the bot in each channel
+                    permissions = channel.permissions_for(guild.me)
+                    channel_info = f"    - {channel.name}: {permissions}"
+                    print(channel_info)
+                    logging.info(channel_info)
                 except Exception as e:
-                    print(f"Failed to post permission, the error is: {e}")
-                    logging.error(f"Failed to post permission, the error is: {e}")
+                    error_message = f"Failed to retrieve permissions for channel '{channel.name}': {e}"
+                    print(error_message)
+                    logging.error(error_message)
         except Exception as error:
-            print(f"Error on Channel in guild.channels loop, the error is: {error}")
-            logging.error(f"Error on Channel in guild.channels loop, the error is: {error}")
+            guild_error_message = f"Error processing channels in guild '{guild.name}': {error}"
+            print(guild_error_message)
+            logging.error(guild_error_message)
+
         print(" ")
-        status.start()
-        await bot.tree.sync()
+
+    # Start the status update loop and synchronize the bot's tree
+    status.start()
+    await bot.tree.sync()
         
 
 class MyModal(discord.ui.Modal, title = "test modal"):
@@ -413,7 +578,7 @@ async def trasend(interaction : discord.Interaction, text_to_send : str , transl
     if translate_langage in langues_n_invert or translate_langage in langues_n_gt_invert  : 
         if translate_langage in langues_n_invert : 
             try :
-                embed = discord.Embed(title= f"Translation to {translate_langage}" ,description= f"{Traduire.translate_text(text_to_send, target_lang=langues_n_invert[translate_langage])}")
+                embed = discord.Embed(title= f"Translation to {translate_langage}" ,description= f"{Deepl_translator.translate_text(text_to_send, target_lang=langues_n_invert[translate_langage])}")
                 embed.set_author( name= interaction.user.display_name, icon_url=interaction.user.avatar)
                 await interaction.response.send_message(embed=embed)
             except Exception as e :
@@ -473,7 +638,7 @@ async def on_raw_reaction_add(Reaction):
                 await message.remove_reaction(Reaction.emoji, user)
             else:
                 try :
-                    embed = discord.Embed(title= f"Deepl Translation to {lang_n[langues[flag]]}" ,description= f"{Traduire.translate_text(message.content, target_lang=langues[flag])}")
+                    embed = discord.Embed(title= f"Deepl Translation to {lang_n[langues[flag]]}" ,description= f"{Deepl_translator.translate_text(message.content, target_lang=langues[flag])}")
                     embed.set_author( name= user, icon_url= user.avatar)
                     await message.reply(embed=embed, mention_author= False)
                     await message.remove_reaction(Reaction.emoji, user)
@@ -515,6 +680,8 @@ async def on_raw_reaction_add(Reaction):
                 await message.reply(embed=embed, mention_author= False)
                 await message.remove_reaction(Reaction.emoji, user)
 
-bot.run(discord_api_key)
+
+
+bot.run(Discord_api_key)
 
 input()
