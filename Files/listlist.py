@@ -1432,6 +1432,3 @@ discord.SelectOption(label='Shona',emoji='🇿🇼',description='Shona language'
 discord.SelectOption(label='Sundanese',emoji='🇮🇩',description='Sundanese language',default=False),
 discord.SelectOption(label='Tajik',emoji='🇹🇯',description='Tajik language', default=False),
 ]
-
-if __name__ == "__main__":
-    print("This is a library module and is not intended to be run directly, please use AT_bot.py .")
