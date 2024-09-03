@@ -1,6 +1,26 @@
+# -----------------------------------------------------------------------------
+#  Displays.py
+#  Copyright (c) 2024 Asha the Fox 🦊
+#  All rights reserved.
+#
+#  This module provides functions to have graphics in the cli during bot startup.
+#  It is separed to make the code easier to read for anyone trying to help or maintain the code.
+#  It is intended to be used as a library to support the main script (AT_bot.py).
+#  
+#  Functions:
+#      Welcome() - The First thing someone should see when running the script.
+#      DS_api() - The ASCII showed when the user is needed to enter a discord bot token.
+#      DPL_api() - The ASCII showed when the user is needed to enter a deepl api token.
+# -----------------------------------------------------------------------------
+
+__author__ = "Asha Geyon (Natpol50)"
+__version__ = 0.1
+__all__ = ['Welcome', 'DS_api', 'DPL_api']
+
+
 import os
 
-def welcome ():
+def Welcome ():
     os.system("title ATbot, Welcome ! ") #Welcome page / Copyright ?
     print("""                         .::^^^^:..                     
                    :!J5GB#&&@@@&&&#BPY7~.               
@@ -33,7 +53,7 @@ def welcome ():
         
                 press enter to continue""")
 
-def Dis_api():
+def DS_api():
     os.system("title New bot, discord bot API key ")
     print("""                              .:~!7?JYY7.                    .?JJJ?7!^:.                            
                          :~7J5PGGP5J7~::..::^^~~~~!!!~~~^^::.:^~!7?Y5PPPY?!^.                       
@@ -75,10 +95,10 @@ def Dis_api():
           ^JY55555YJ!.           :J5PPPPPP5YJ5PPPPPP5J:                 !Y5PPPPP5Y~                 
              ....                  ........  ........                     .......                  \n""")
 
-    print('  As you chose New bot, you\'ll need a discord bot API key. \n If you do not know how to get one, here\'s a tutorial : https://rapidapi.com/volodimir.kudriachenko/api/DiscordBot/details')
+    print('  As you chose New bot, you\'ll need a discord bot API key (a bot token). \n If you do not know how to get one, here\'s a tutorial : https://rapidapi.com/volodimir.kudriachenko/api/DiscordBot/details')
 
 
-def deepl () :
+def DPL_api () :
     os.system("title New bot, Deepl API key ")
     print("""
                                              ..::::::..                                             
@@ -130,3 +150,8 @@ def deepl () :
                                                                  .::::                             """)
     
     print('  Now, you\'ll need a Deepl API (Free or Paid, both works fine for a reasonable amount of messages per month)\n If you do not know how to find yours, here\'s a tutorial : https://support.deepl.com/hc/en-us/articles/360020695820-Authentication-Key')
+
+
+
+if __name__ == "__main__":
+    print("This is a library module and is not intended to be run directly, please use AT_bot.py .")
