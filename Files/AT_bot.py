@@ -11,7 +11,7 @@ import logging
 //////////////////
 """
 
-def bootup_function():
+def bootup_function() -> None:
     """
     Verifies if everything seems right and initialize logging.
     
@@ -27,7 +27,7 @@ def bootup_function():
     Returns:
     - None
     """
-    def log_init():
+    def log_init() -> None:
         """
         Initialize logging for the script.
         Used after the first time setup flag has been checked
@@ -41,30 +41,30 @@ def bootup_function():
         import pathlib
         import datetime
 
-        log_folder = f'{pathlib.Path(__file__).parent.absolute()}/logs'
+        Log_folder = f'{pathlib.Path(__file__).parent.absolute()}/logs'
 
-        if not os.path.exists(log_folder):
-            os.makedirs(log_folder)
+        if not os.path.exists(Log_folder):
+            os.makedirs(Log_folder)
 
-        log_file = os.path.join(
-            log_folder,
+        Log_file = os.path.join(
+            Log_folder,
             f"{datetime.datetime.now():%Y-%m-%d_%H-%M-%S}.log"
         )
 
         logging.basicConfig(
-            filename=log_file,
+            filename=Log_file,
             level=logging.INFO,
             format="%(asctime)s [%(levelname)s]: %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S"
         )
         logging.info("Script started.")
     
-    flag_file = "Firasatar&a&.flag"  # Flag to indicate first-time setup
+    Flag_file = "Firasatar&a&.flag"  # Flag to indicate first-time setup
 
-    if not os.path.exists(flag_file):
+    if not os.path.exists(Flag_file):
         import Dependency_installer as install
 
-        dependencies = [
+        Dependencies = [
             'discord.py',
             'googletrans==4.0.0-rc.1',
             'typing',
@@ -75,12 +75,12 @@ def bootup_function():
             'deepl'
         ]
 
-        total_size = 0
-        dependencies_to_install = []
+        Total_size = 0
+        Dependencies_to_install = []
 
-        print("As this is the first time the script is running, dependencies will be installed.")
+        print("As this is the first time the script is running, Dependencies will be installed.")
 
-        # Attempt to install pathlib separately
+        # Attempt to install pathlib separately, as pathlib is needed for the logging to work. (refer to log_init() function)
         try:
             subprocess.check_call(['pip', 'install', 'pathlib'])
         except subprocess.CalledProcessError as e:
@@ -91,37 +91,38 @@ def bootup_function():
             exit()
 
         log_init()
-        logging.info("First-time setup, installing dependencies")
+        del log_init
+        logging.info("First-time setup, installing Dependencies")
 
         # Determine the size of each dependency and prepare the installation list
-        for dep in dependencies:
-            dep_size = install.get_package_size(dep)
-            if dep_size > 0:
-                dependencies_to_install.append(dep)
-            elif dep_size == -1:
-                print(f"Error retrieving size for package {dep}")
-            total_size += dep_size
+        for Dep in Dependencies:
+            Dep_size = install.get_package_size(Dep)
+            if Dep_size > 0:
+                Dependencies_to_install.append(Dep)
+            elif Dep_size == -1:
+                print(f"Error retrieving size for package {Dep}")
+            Total_size += Dep_size
 
         # Install thoses dependencies (OR NOT)
-        if dependencies_to_install:
+        if Dependencies_to_install:
             option = input(
-                f"You need to install these dependencies: {dependencies_to_install}.\n"
-                f"The total size is approximately {total_size:.2f} MB.\n"
+                f"You need to install these dependencies: {Dependencies_to_install}.\n"
+                f"The total size is approximately {Total_size:.2f} MB.\n"
                 "Do you wish to proceed (Y/N)? "
             )
             if option.lower() not in ["y", "yes"]:
                 exit()
 
-            install.install_packages(dependencies_to_install)
+            install.install_packages(Dependencies_to_install)
             
-
+        del install
         # Create the flag file to indicate setup has been completed
-        with open(flag_file, "w") as file:
-            file.write(
+        with open(Flag_file, "w") as File:
+            File.write(
                 "A simple flag indicating that the script has run before.\n"
                 "Asha thanks you for reading this, but seriously, don't you have anything else to do?"
             )
-        del install
+        
     else:
         log_init()
         logging.info("Script has already run before, skipping dependency installation.")
@@ -156,7 +157,7 @@ import datetime
 import Displays
 
 
-def Bot_picker(input_list):
+def bot_picker(input_list) -> str:
     """
     Displays a CLI menu to choose an item from the input_list using the curses library.
 
@@ -168,49 +169,49 @@ def Bot_picker(input_list):
     """
 
     # Initialize the curses environment
-    stdscr = curses.initscr()
+    Stdscr = curses.initscr()
     curses.cbreak()  # Disable line buffering
-    stdscr.keypad(True)  # Enable special keys (e.g., arrow keys)
+    Stdscr.keypad(True)  # Enable special keys (e.g., arrow keys)
     curses.noecho()  # Do not display typed characters
 
-    selected_index = 0  # Track the currently selected index
+    Selected_index = 0  # Track the currently selected Index
 
     try:
         while True:
-            stdscr.clear()  # Clear the screen
+            Stdscr.clear()  # Clear the screen
             
             # Display instruction text
-            stdscr.addstr("\nChoose a bot, or choose 'New bot' to create a new bot/profile.\n\n")
+            Stdscr.addstr("\nChoose a bot/config, or choose 'New bot/config' to create a new bot/config.\n\n")
 
             # Display the list with one element highlighted
-            for index, element in enumerate(input_list):
-                if index == selected_index:
-                    stdscr.addstr(f"{index + 1}. {element}\n", curses.A_REVERSE)  # Highlight selected item
+            for Index, Element in enumerate(input_list):
+                if Index == Selected_index:
+                    Stdscr.addstr(f"{Index + 1}. {Element}\n", curses.A_REVERSE)  # Highlight selected item
                 else:
-                    stdscr.addstr(f"   {element}\n")
+                    Stdscr.addstr(f"   {Element}\n")
 
-            stdscr.refresh()  # Refresh the screen to reflect changes
+            Stdscr.refresh()  # Refresh the screen to reflect changes
 
-            key = stdscr.getch()  # Get user input
+            Key = Stdscr.getch()  # Get user input
 
-            # Navigate through the list
-            if key == curses.KEY_DOWN:
-                selected_index = min(selected_index + 1, len(input_list) - 1)
-            elif key == curses.KEY_UP:
-                selected_index = max(selected_index - 1, 0)
-            elif key == 10:  # Enter key
+            # Navigate through the list, gosh i'd like to have a case statement in python
+            if Key == curses.KEY_DOWN:
+                Selected_index = min(Selected_index + 1, len(input_list) - 1)
+            elif Key == curses.KEY_UP:
+                Selected_index = max(Selected_index - 1, 0)
+            elif Key == 10:  # Enter key
                 break  # Exit the loop to return the selected item
 
     finally:
         # Cleans up the curses environment
         curses.endwin()
 
-    return input_list[selected_index]
+    return input_list[Selected_index]
 
-def config_init():
+def config_init() -> None:
     """
     Sets up the configuration file for ATbot, 
-    it allows the user to select multiple profiles.
+    it allows the user to select multiple profiles/config.
     
     Args:
     - None
@@ -219,15 +220,15 @@ def config_init():
     - None
     """
     # There, we initialise the configuration file, we must not forget to make it accessible from everything.
-    global config, config_file
-    config = configparser.ConfigParser()
-    config_file = f'{pathlib.Path(__file__).parent.absolute()}/config.ini'
+    global Config, Config_file
+    Config = configparser.ConfigParser()
+    Config_file = f'{pathlib.Path(__file__).parent.absolute()}/config.ini'
 
-    if not os.path.exists(config_file):
-        with open(config_file, 'w') as file:
+    if not os.path.exists(Config_file):
+        with open(Config_file, 'w') as file:
             file.write(" ")  # Create an empty config file
 
-def setup_environment():
+def setup_environment() -> None:
     """
     Sets up the initial environment for the ATbot configuration.
     This includes creating a configuration file if it doesn't exist,
@@ -240,61 +241,61 @@ def setup_environment():
     Returns:
     - None
     """
-    global selected_bot
+    global Selected_bot
 
 
     # First, we welcome the user.
     Displays.Welcome()
     os.system('cls')  # Clear the screen
     
-    # And then, ask the user which bot he wanna use.
+    # And then, ask the user which configuration he wanna use.
     os.system("title ATbot - Config Picker")
-    config.read(config_file)
-    bot_list = config.sections()
-    bot_list.append('New bot')  # Adds a 'New bot' option, for multiple profiles.
-    selected_bot = Bot_picker(bot_list)
+    Config.read(Config_file)
+    Bot_list = Config.sections()
+    Bot_list.append('New bot/config')  # Adds a 'New bot/config' option, for multiple profiles.
+    Selected_bot = bot_picker(Bot_list)
     print(" ")
 
     os.system('cls')
 
-    if selected_bot == 'New bot':
+    if Selected_bot == 'New bot':
         # Handle new bot creation
-        os.system("title ATbot - New Bot")
-        selected_bot = input("Choose a name for the new bot: ")
+        os.system("title ATbot - New Bot/config")
+        Selected_bot = input("Choose a name for the new bot/config: ")
 
         # First, we get and verify the discord bot API key.
         Displays.DS_api()
-        discord_key_valid = False
-        while not discord_key_valid:
-            discord_api_key = input("\nDiscord bot API key (token): ")
+        Discord_key_valid = False
+        while not Discord_key_valid:
+            Discord_api_key = input("\nDiscord bot API key (token): ")
             print("Starting Discord token verification...")
             logging.info("Starting Discord token verification.")
-            discord_key_valid = Tokenverif.DS_token(discord_api_key)
-            if not discord_key_valid :
+            Discord_key_valid = Tokenverif.DS_token(Discord_api_key)
+            if not Discord_key_valid :
                 print('Please, provide a correct bot token')
         print("The token seems good, continuing...")
         logging.info("Token verification was successful, continuing...")
 
         # Then, we do the same thing with the Deepl one.
         Displays.DPL_api()
-        deepl_key_valid = False
-        while not deepl_key_valid:
-            deepl_api_key = input("\nDeepl API key: ")
+        Deepl_key_valid = False
+        while not Deepl_key_valid:
+            Deepl_api_key = input("\nDeepl API key: ")
             print("Starting Deepl token verification...")
             logging.info("Starting Deepl token verification.")
-            deepl_key_valid = Tokenverif.DPL_token(deepl_api_key)
+            Deepl_key_valid = Tokenverif.DPL_token(Deepl_api_key)
         print("The token seems good, continuing...")
         logging.info("Token verification was successful, continuing...\n")
 
         # And finally write the bot informations onto the config file.
-        config[f"{selected_bot}"]={
-        "discord" : discord_api_key,
-        "deepl" : deepl_api_key
+        Config[f"{Selected_bot}"]={
+        "discord" : Discord_api_key,
+        "deepl" : Deepl_api_key
         }                               
-        with open(config_file,"w") as File_object:
-            config.write(File_object)
+        with open(Config_file,"w") as File_object:
+            Config.write(File_object)
 
-def bot_bootup(selected_bot, config_file, config):
+def bot_bootup(selected_bot, config_file, config) -> None:
     """
     Initializes and starts up the bot by performing the following tasks:
     1. Sets the console title and prints the configuration file location.
@@ -317,8 +318,8 @@ def bot_bootup(selected_bot, config_file, config):
     
     """
     # Define global variables
-    global Discord_api_key, Deepl_translator, gt, bot, startup_time
-    startup_time = datetime.datetime.now()
+    global Discord_api_key, Deepl_translator, Google_translator, bot, Startup_time
+    Startup_time = datetime.datetime.now()
 
     # Set the console window title
     os.system(f"title Bot : {selected_bot} , Starting...")
@@ -329,7 +330,7 @@ def bot_bootup(selected_bot, config_file, config):
 
     # Test connectivity to Discord.com
     try:
-        response = requests.get("https://discord.com/", timeout=5)
+        Response = requests.get("https://discord.com/", timeout=5)
         print("The request to Discord.com was successful\n")
     except Exception as e:
         print("The request to Discord.com was unsuccessful")
@@ -345,23 +346,23 @@ def bot_bootup(selected_bot, config_file, config):
 
     # Initialize Deepl and Google translators
     Deepl_translator = deepl.Translator(Deepl_api_key)
-    gt = Translator()
+    Google_translator = Translator()
 
     # Set up the Discord bot
     print(f"Running on discord.py version {discord.__version__}")
     logging.info(f"Running on discord.py version {discord.__version__}")
 
-    intents = discord.Intents.default()
-    intents.message_content = True
-    intents.reactions = True  # Set permissions for the bot
+    Intents = discord.Intents.default()
+    Intents.message_content = True
+    Intents.reactions = True  # Set permissions for the bot
 
-    bot = commands.Bot(command_prefix='ATbot.', intents=intents)
+    bot = commands.Bot(command_prefix='ATbot.', intents=Intents)
     bot.remove_command('help')  # Remove the default help command
 
 
 """
 //////////////////////
-///////Bot code///////
+///////Bot boot///////
 //////////////////////
 """
 
@@ -372,12 +373,12 @@ del bootup_function
 
 config_init()
 setup_environment()
-bot_bootup(selected_bot,config_file,config)
-del Bot_picker
+bot_bootup(Selected_bot,Config_file,Config)
+del bot_picker
 del config_init
 del setup_environment
 
-def ASCII(image_url, width, height):
+def ASCII(image_url, width, height) -> str:
     """
     Converts an image from a URL to an ASCII art representation.
 
@@ -393,29 +394,29 @@ def ASCII(image_url, width, height):
 
     try:
         # Download the image from the URL
-        response = requests.get(image_url)
-        response.raise_for_status()  # Raise an error for bad HTTP responses
+        Response = requests.get(image_url)
+        Response.raise_for_status()  # Raise an error for bad HTTP responses
 
         # Open the image and resize it while maintaining aspect ratio
-        img = Image.open(BytesIO(response.content))
-        img = img.resize((width, height))
+        Img = Image.open(BytesIO(Response.content))
+        Img = Img.resize((width, height))
 
         # Convert the image to grayscale
-        img = img.convert("L")
+        Img = Img.convert("L")
 
         # Invert the colors to fit ASCII art conventions (dark = ASCII char, light = space)
-        img = Image.eval(img, lambda x: 255 - x)
+        Img = Image.eval(Img, lambda x: 255 - x)
 
         # Create the ASCII art
-        ascii_img = ""
+        Ascii_img = ""
         for i in range(height):
             for j in range(width):
-                pixel_value = img.getpixel((j, i))
-                ascii_char = ASCII_CHARS[pixel_value * (len(ASCII_CHARS) - 1) // 255]
-                ascii_img += ascii_char
-            ascii_img += "\n"
+                Pixel_value = Img.getpixel((j, i))
+                Ascii_char = ASCII_CHARS[Pixel_value * (len(ASCII_CHARS) - 1) // 255]
+                Ascii_img += Ascii_char
+            Ascii_img += "\n"
 
-        return ascii_img
+        return Ascii_img
 
     except Exception as e:
         # Log the error and return a user-fwiendly message 0v0
@@ -425,7 +426,7 @@ def ASCII(image_url, width, height):
         
  
 
-def format_uptime(uptime):
+def format_uptime(uptime) -> str:
     """
     Formats a timedelta object into a human-readable string representing uptime.
 
@@ -435,33 +436,33 @@ def format_uptime(uptime):
     Returns:
     - uptime_str (str): A string representing the uptime in days, hours, minutes, and seconds.
     """
-    days = uptime.days
-    seconds = uptime.seconds
-    hours, remainder = divmod(seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
+    Days = uptime.days
+    Seconds = uptime.seconds
+    Hours, Remainder = divmod(Seconds, 3600)
+    Minutes, Seconds = divmod(Remainder, 60)
 
     # Initialize an empty list to collect time units
-    time_units = []
+    Time_units = []
 
     # Add days,hours,minutes and seconds to the list if greater than zero
-    if days > 0:
-        time_units.append(f"{days} day{'s' if days > 1 else ''}")
-    if hours > 0:
-        time_units.append(f"{hours} hour{'s' if hours > 1 else ''}")
-    if minutes > 0:
-        time_units.append(f"{minutes} minute{'s' if minutes > 1 else ''}")
-    if seconds > 0:
-        time_units.append(f"{seconds} second{'s' if seconds > 1 else ''}")
+    if Days > 0:
+        Time_units.append(f"{Days} day{'s' if Days > 1 else ''}")
+    if Hours > 0:
+        Time_units.append(f"{Hours} hour{'s' if Hours > 1 else ''}")
+    if Minutes > 0:
+        Time_units.append(f"{Minutes} minute{'s' if Minutes > 1 else ''}")
+    if Seconds > 0:
+        Time_units.append(f"{Seconds} second{'s' if Seconds > 1 else ''}")
 
     # Join the time units with commas, and ensure proper formatting
-    uptime_str = ', '.join(time_units)
+    Uptime_str = ', '.join(Time_units)
 
-    return uptime_str
+    return Uptime_str
 
 
 
 @tasks.loop(seconds=60)
-async def status():
+async def status() -> None:
     """
     Updates the bot's status and logs the uptime every 60 seconds.
     It allows us the have a rough idea of how long the bot has ran, especially if no errors are risen.
@@ -473,27 +474,27 @@ async def status():
     - None
     """
     # Calculate the uptime and server count, to update status of both the bot, and the console.
-    uptime = datetime.datetime.now() - startup_time
-    server_count = len(bot.guilds)
+    Uptime = datetime.datetime.now() - Startup_time
+    Server_count = len(bot.guilds)
     
-    # Set the status message based on the number of servers
-    if server_count == 1:
-        status_message = f'{server_count} server'
+    # Set the status message based on the number of servers WHY ISN'T THERE A CASE IN PYTHON GODAMNIT
+    if Server_count == 1:
+        Status_message = f'{Server_count} server'
     else:
-        status_message = f'{server_count} servers'
+        Status_message = f'{Server_count} servers'
     
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status_message))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=Status_message))
     
     # Log the uptime and update the console title
-    uptime_str = format_uptime(uptime)
-    logging.info(f"The bot has been running for {uptime_str}.")
-    os.system(f"title Bot : {selected_bot} , Uptime : {uptime_str}.")
+    Uptime_str = format_uptime(Uptime)
+    logging.info(f"The bot has been running for {Uptime_str}.")
+    os.system(f"title Bot : {Selected_bot} , Uptime : {Uptime_str}.")
 
            
 
 
 @bot.event
-async def on_ready():
+async def on_ready() -> None:
     """
     Event handler for when the bot is ready.
     Clears the command line interface, prints bot information,
@@ -509,112 +510,210 @@ async def on_ready():
     os.system('cls')
 
     # Print bot connection details
-    bot_info = f"Connected as {bot.user.name} (ID: {bot.user.id})"
-    print(f"\n{bot_info}\n")
-    print(ASCII(bot.user.avatar, 20, 10))
-    logging.info(bot_info)
+    Bot_info = f"Connected as {bot.user.name} (ID: {bot.user.id})"
+    print(f"\n{Bot_info}\n")
+    print(ASCII(bot.user.avatar, 25, 10))
+    logging.info(Bot_info)
 
     # List bot permissions in each guild
-    for guild in bot.guilds:
-        print(f"Permissions in guild: {guild.name}")
-        logging.info(f"Permissions in guild: {guild.name}")
+    for Guild in bot.guilds:
+        print(f"Permissions in guild: {Guild.name}")
+        logging.info(f"Permissions in guild: {Guild.name}")
 
         try:
-            for channel in guild.channels:
+            for Channel in Guild.channels:
                 try:
                     # Get and print permissions for the bot in each channel
-                    permissions = channel.permissions_for(guild.me)
-                    channel_info = f"    - {channel.name}: {permissions}"
-                    print(channel_info)
-                    logging.info(channel_info)
+                    permissions = Channel.permissions_for(Guild.me)
+                    Channel_info = f"    - {Channel.name} [Permission integer : {permissions.value}]"
+                    print(Channel_info)
+                    logging.info(Channel_info)
                 except Exception as e:
-                    error_message = f"Failed to retrieve permissions for channel '{channel.name}': {e}"
-                    print(error_message)
-                    logging.error(error_message)
+                    Error_message = f"Failed to retrieve permissions for channel '{Channel.name}': {e}"
+                    print(Error_message)
+                    logging.error(Error_message)
         except Exception as error:
-            guild_error_message = f"Error processing channels in guild '{guild.name}': {error}"
-            print(guild_error_message)
-            logging.error(guild_error_message)
+            Guild_error_message = f"Error processing channels in guild '{Guild.name}': {error}"
+            print(Guild_error_message)
+            logging.error(Guild_error_message)
 
         print(" ")
 
-    # Start the status update loop and synchronize the bot's tree
+    # Start the status update loop and synchronize the bot's tree (Slash commands)
     status.start()
     await bot.tree.sync()
         
 
-class MyModal(discord.ui.Modal, title = "test modal"):
-    text_to_translate = discord.ui.TextInput(label="Text to Translate", style = discord.TextStyle.long, placeholder= "Bonjour tout le monde ! ", required= True,)
 
-    async def on_submit(self, interaction : discord.Interaction):
-        embed = discord.Embed(title= "Translation command" ,description= "")
+"""
+//////////////////////
+///////Bot code///////
+//////////////////////
+"""
+
+
+def gd_translator(text_to_translate: str, translate_language: str) -> tuple[str, str]:
+    """
+    Translation handler to avoid code repetition (DRY principle). This function detects which translation service 
+    (Google Translate or DeepL) to use, preferring DeepL when available, and should be hable to handle most errors.
+
+    Args:
+    - text_to_translate (str): The text to translate.
+    - translate_language (str): The target language for translation.
+
+    Returns:
+    - Translated_text (str): The translated text.
+    - Translator_name (str): The acronym of the translator used ('gt' for Google Translate, 'dpl' for DeepL), is also used to show errors to user if needed.
+    """
+    
+    Translated_text: str = ""
+    Translator_name: str = ""
+
+    logging.info(f"gd_translator received a request to translate into '{translate_language}'.")
+
+    # First, try to use DeepL if the target language is supported (deepl usually offer better accuracy)
+    if translate_language in Deepl_language_dict_inverted:
+        logging.info("Language appears to be supported by DeepL. Attempting translation with DeepL.")
+
+        try:
+            Translated_text = Deepl_translator.translate_text(
+                text_to_translate, 
+                target_lang=Deepl_language_dict_inverted[translate_language]
+            )
+            Translator_name = "dpl"
+            logging.info("Translation with DeepL successful.")
+
+        except Exception as e:
+            # Handle specific error codes from DeepL (Making logs easier to read)
+            if e.code == 456:
+                logging.error("DeepL translation quota exceeded for this billing period.")
+                print("DeepL translation quota exceeded for this billing period.")
+            elif e.code == 413:
+                logging.error("The message is too large to be processed by DeepL.")
+                print("Message is too large to be processed.")
+            else:
+                logging.error(f"Unexpected error during DeepL translation: {e}")
+
+            # Fallback to Google Translate (GT), do not check if language is supported by GT, as it is the case for all languages as in the 05/09/2024 (european date)
+            logging.info("Switching to Google Translate due to DeepL error.")
+            try:
+                Translated_text = Google_translator.translate(
+                    text_to_translate, 
+                    dest=Google_language_dict_inverted[translate_language]
+                ).text
+                Translator_name = "gt"
+                logging.info("Translation with Google Translate successful after DeepL failure.")
+
+            except Exception as e:
+                logging.critical(f"Error using Google Translate after DeepL failure: {e}")
+                logging.critical(f"Failed to translate message '{text_to_translate}' to '{translate_language}'.")
+                Translated_text = "An error occurred; the bot could not complete the translation. Please contact support."
+                Translator_name = "ERROR"
+
+    # If DeepL doesn't support the language, check if Google Translate does
+    elif translate_language in Google_language_dict_inverted:
+        logging.info("Language appears to be supported by Google Translate.")
+
+        try:
+            Translated_text = Google_translator.translate(
+                text_to_translate, 
+                dest=Google_language_dict_inverted[translate_language]
+            ).text
+            Translator_name = "gt"
+            logging.info("Translation with Google Translate successful.")
+
+        except Exception as e:
+            logging.critical(f"Error using Google Translate: {e}")
+            logging.critical(f"Failed to translate message '{text_to_translate}' to '{translate_language}'.")
+            Translated_text = "An error occurred; the bot could not complete the translation. Please contact bot owner or support."
+            Translator_name = "ERROR"
+
+    # If neither translation service supports the language, log the issue and informs the user
+    else:
+        logging.error(f"Unsupported language '{translate_language}' for both DeepL and Google Translate.")
+        Translated_text = f"Error: '{translate_language}' is not supported by the current translation services used by this bot."
+        Translator_name = "ERROR"
+
+    return Translated_text, Translator_name
+
         
-        embed.set_author( name= interaction.user.display_name, icon_url=interaction.user.avatar)
-        await interaction.response.send_message(embed=embed, ephemeral= True)
 
-@bot.tree.context_menu(name='translation')
-async def trad(interaction : discord.Interaction , user : discord.Member):
-    await interaction.response.send_modal(MyModal())
-    logging.info(f'{user} used translation app')
+@bot.tree.command(name='trsend', description='Send a translated message with the bot')
+@discord.app_commands.describe(text_received="The message you want to send using the bot.",translate_langage="The language you want your message to be in.")
+@discord.app_commands.rename(text_received="message",translate_langage="langage")
+async def trasend(interaction: discord.Interaction,text_received: str,translate_langage: str) -> None:
+    """
+    Handles the translation and sending of a message using the bot.
 
+    1. Logs the translation request.
+    2. Sends a temporary confirmation message to the user.
+    3. Translates the input message.
+    4. Sends the translated message via a webhook.
+    5. Deletes the specific webhook after sending the message.
 
+    Args:
+    - interaction (discord.Interaction): The interaction object from the command.
+    - text_received (str): The message to translate and send.
+    - translate_langage (str): The target language for the translation.
 
+    Returns :
+    - None
+    """
 
+    logging.info(f"Translate request from {interaction.user.display_name} ({interaction.user.name}) using trsend with \"{translate_langage}\" language.")
+    await interaction.response.send_message('Message received, processing...', ephemeral=True)
+    Translated_text, Translator_name = gd_translator(text_to_translate = text_received, translate_language = translate_langage)
 
+    # Create a webhook with a name that includes the translator name, we grab the webhook id to allow it to delete just this one.
+    Webhook = await interaction.channel.create_webhook(name=interaction.user.display_name+ " " + Translator_name)
+    Webhook_id = Webhook.id
 
+    try:
+        # Send the translated text using the created webhook
+        await Webhook.send(content=str(Translated_text),username=interaction.user.display_name,avatar_url=interaction.user.avatar)
+    except Exception as e:
+        logging.error(f"There was an error sending the fake user message in trsend function error is : {e}")
 
-
-
-
-
-
-
-
-@bot.tree.command(name ='trsend', description = 'Send a translated message with the bot', )
-@discord.app_commands.describe(text_to_send = "The message you wanna send using the bot.", translate_langage = "The langage you want your message to be in." )
-@discord.app_commands.rename(text_to_send = "message", translate_langage = "langage")
-async def trasend(interaction : discord.Interaction, text_to_send : str , translate_langage : str ):
-    logging.info(f"Translate request from {interaction.user.display_name} ({interaction.user.name}) using trsend with \"{translate_langage}\" langage.")
-    if translate_langage in langues_n_invert or translate_langage in langues_n_gt_invert  : 
-        if translate_langage in langues_n_invert : 
-            try :
-                embed = discord.Embed(title= f"Translation to {translate_langage}" ,description= f"{Deepl_translator.translate_text(text_to_send, target_lang=langues_n_invert[translate_langage])}")
-                embed.set_author( name= interaction.user.display_name, icon_url=interaction.user.avatar)
-                await interaction.response.send_message(embed=embed)
-            except Exception as e :
-                logging.error(f"Error while using Deepl (Deepl module) : {e}")
-                logging.info(f'Switching to googletrans module')
-                await interaction.channel.send(f'(Due to an error, the translation switched to Google translate, it might be less accurate)')
-                translation = gt.translate(text_to_send, dest=langues_n_gt_invert[translate_langage])
-                embed = discord.Embed(title= f"Translation to {translate_langage}" ,description= f"{translation.text}")
-                embed.set_author( name= interaction.user.display_name, icon_url=interaction.user.avatar)
-                await interaction.response.send_message(embed=embed)
-        elif translate_langage in langues_n_gt_invert :
-            try :
-                translation = gt.translate(text_to_send, dest=langues_n_gt_invert[translate_langage])
-                await interaction.channel.send(f'(Deepl does not support that langage, the translation switched to Google translate, it might be less accurate)')
-                embed = discord.Embed(title= f"Translation to {translate_langage}" ,description= f"{translation.text}")
-                embed.set_author( name= interaction.user.display_name, icon_url=interaction.user.avatar)
-                await interaction.response.send_message(embed=embed)
-            except Exception as e :
-                logging.critical(f"Error while using Google translate (googletrans module) : {e}")
-    else :
-        await interaction.response.send_message(f"Error, \"{translate_langage}\" is not a valid langage.", ephemeral=True)
+        # Delete the specific webhook after sending the message
+    Webhooks = await interaction.channel.webhooks()
+    for wh in Webhooks:
+        if wh.id == Webhook_id:
+            await wh.delete()
+            break  # Exit the loop once the specific webhook is deleted
 
 @trasend.autocomplete("translate_langage")
-async def trasend_autocompletion(interaction: discord.Interaction, tmp_typing: str) -> typing.List[discord.app_commands.Choice[str]]:
-    return_list = []
-    filtered_lang_ch_auto = [langage_choice for langage_choice in lang_ch_auto if tmp_typing.lower() in langage_choice.lower()]
+async def trasend_autocompletion(
+    interaction: discord.Interaction,  # Taking the interaction just in case
+    tmp_typing: str
+) -> typing.List[discord.app_commands.Choice[str]]:
+    """
+    Provides autocomplete suggestions for the 'translate_langage' parameter in the 'trasend' command.
+
+    Args:
+    - interaction (discord.Interaction): The interaction object that triggered the autocomplete.
+    - tmp_typing (str): The current text input from the user for which to provide suggestions.
+
+    Returns:
+    - typing.List[discord.app_commands.Choice[str]]: A list of autocomplete choices that match the user's input.
+    """
+    # Initialize the list to hold autocomplete choices
+    Return_list = []
+
+    # Filter the available language choices based on user input
+    filtered_lang_ch_auto = [
+        langage_choice for langage_choice in lang_ch_auto
+        if tmp_typing.lower() in langage_choice.lower()
+    ]
+
+    # Limit the number of choices to a maximum of 25
     max_choices = 25
     for langage_choice in filtered_lang_ch_auto[:max_choices]:
-        return_list.append(discord.app_commands.Choice(name=langage_choice, value=langage_choice))
+        Return_list.append(
+            discord.app_commands.Choice(name=langage_choice, value=langage_choice)
+        )
 
-    return return_list
+    return Return_list
 
-
-@bot.tree.command(name='invitest', description='test 2 , invisible')
-async def invitest(interaction : discord.Interaction ):
-    await interaction.response.send_message('voici un test, invisible', ephemeral=True)
 
 @bot.event
 async def on_raw_reaction_add(Reaction):
@@ -627,7 +726,7 @@ async def on_raw_reaction_add(Reaction):
     if flag in langues:
         user = await bot.fetch_user(Reaction.user_id)
         if langues[flag] == 'X' :
-            await message.reply(f'Translation refused, the country selected does not have a langage defined. (at the time, the country is either Belgium or Switzerland)')
+            await message.reply(f'Translation refused, the country selected does not have a langage defined. (at the time this version of the code was written, the country is either Belgium or Switzerland)')
             await message.remove_reaction(Reaction.emoji, user)
         else :
             logging.info(f"({message.guild.name}) Message in {message.channel.name}: \"{message.content}\" Reaction added by {Reaction.member} (message by {message.author.name} ({message.author.global_name})) for Deepl \"{langues[flag]}\" Translation .")

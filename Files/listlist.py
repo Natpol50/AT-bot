@@ -170,7 +170,7 @@ langues = {
 '🇹🇷': 'TR',     # Turkey (Turkish)
 '🇺🇦': 'UK'     # Ukraine (Ukrainian)
 }
-lang_n = {
+Deepl_language_dict = {
     'BG': 'Bulgarian',
     'ZH': 'Simplified Chinese (China)',
     'CS': 'Czech (Czech Republic)',
@@ -204,7 +204,7 @@ lang_n = {
     'UK': 'Ukrainian (Ukraine)',
     'X': 'Not defined'
 }
-langues_n_invert = {
+Deepl_language_dict_inverted = {
 "Bulgarian": "BG",  
 "Simplified Chinese (China)": "ZH",
 "Czech (Czech Republic)": "CS",
@@ -237,7 +237,7 @@ langues_n_invert = {
 "Turkish (Turkey)": "TR",
 "Ukrainian (Ukraine)": "UK",
 }
-langues_gt = {
+Google_language_dict = {
         '🇦🇩': 'ca',     # Andorra (Catalan)
         '🇦🇪': 'ar',     # United Arab Emirates (Arabic)
         '🇦🇫': 'fa',     # Afghanistan (Dari and Pashto)
@@ -484,7 +484,7 @@ langues_gt = {
         '🇿🇲': 'en',     # Zambia (English)
         '🇿🇼': 'en',     # Zimbabwe (English)
     }
-lang_n_gt = {
+Google_language_dict_inverted = {
     'ca': 'Catalan',
     'ar': 'Arabic',
     'fa': 'Dari and Pashto',

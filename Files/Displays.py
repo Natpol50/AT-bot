@@ -20,8 +20,8 @@ __all__ = ['Welcome', 'DS_api', 'DPL_api']
 
 import os
 
-def Welcome ():
-    os.system("title ATbot, Welcome ! ") #Welcome page / Copyright ?
+def Welcome () -> None:
+    os.system("title ATbot, welcome ! ") #Welcome page / Copyright ?
     print("""                         .::^^^^:..                     
                    :!J5GB#&&@@@&&&#BPY7~.               
                .!5B&@@@&&&&&&&&&&&&&&@@@&GJ^            
@@ -53,7 +53,7 @@ def Welcome ():
         
                 press enter to continue""")
 
-def DS_api():
+def DS_api() -> None:
     os.system("title New bot, discord bot API key ")
     print("""                              .:~!7?JYY7.                    .?JJJ?7!^:.                            
                          :~7J5PGGP5J7~::..::^^~~~~!!!~~~^^::.:^~!7?Y5PPPY?!^.                       
@@ -98,7 +98,7 @@ def DS_api():
     print('  As you chose New bot, you\'ll need a discord bot API key (a bot token). \n If you do not know how to get one, here\'s a tutorial : https://rapidapi.com/volodimir.kudriachenko/api/DiscordBot/details')
 
 
-def DPL_api () :
+def DPL_api () -> None:
     os.system("title New bot, Deepl API key ")
     print("""
                                              ..::::::..                                             
