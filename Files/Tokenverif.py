@@ -15,6 +15,7 @@
 __author__ = "Asha Geyon (Natpol50)"
 __version__ = 0.5
 __all__ = ['run_bot', 'DS_token', 'DPL_token']
+__last_revision__ = '2024-09-05'
 
 import discord
 import logging

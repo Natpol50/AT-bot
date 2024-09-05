@@ -59,7 +59,7 @@ def bootup_function() -> None:
         )
         logging.info("Script started.")
     
-    Flag_file = "Firasatar&a&.flag"  # Flag to indicate first-time setup
+    Flag_file = "Firstboot.flag"  # Flag to indicate first-time setup
 
     if not os.path.exists(Flag_file):
         import Dependency_installer as install
@@ -105,12 +105,12 @@ def bootup_function() -> None:
 
         # Install thoses dependencies (OR NOT)
         if Dependencies_to_install:
-            option = input(
+            Option = input(
                 f"You need to install these dependencies: {Dependencies_to_install}.\n"
                 f"The total size is approximately {Total_size:.2f} MB.\n"
                 "Do you wish to proceed (Y/N)? "
             )
-            if option.lower() not in ["y", "yes"]:
+            if Option.lower() not in ["y", "yes"]:
                 exit()
 
             install.install_packages(Dependencies_to_install)
@@ -144,7 +144,7 @@ import deepl
 from discord.interactions import Interaction
 from googletrans import Translator
 import typing
-from listlist import *
+from Lists import *
 import requests
 import configparser
 import curses
@@ -572,34 +572,26 @@ def gd_translator(text_to_translate: str, translate_language: str) -> tuple[str,
     logging.info(f"gd_translator received a request to translate into '{translate_language}'.")
 
     # First, try to use DeepL if the target language is supported (deepl usually offer better accuracy)
-    if translate_language in Deepl_language_dict_inverted:
+    if translate_language in deepl_name_to_acronym:
         logging.info("Language appears to be supported by DeepL. Attempting translation with DeepL.")
 
         try:
             Translated_text = Deepl_translator.translate_text(
                 text_to_translate, 
-                target_lang=Deepl_language_dict_inverted[translate_language]
+                target_lang=deepl_name_to_acronym[translate_language]
             )
             Translator_name = "dpl"
             logging.info("Translation with DeepL successful.")
 
         except Exception as e:
-            # Handle specific error codes from DeepL (Making logs easier to read)
-            if e.code == 456:
-                logging.error("DeepL translation quota exceeded for this billing period.")
-                print("DeepL translation quota exceeded for this billing period.")
-            elif e.code == 413:
-                logging.error("The message is too large to be processed by DeepL.")
-                print("Message is too large to be processed.")
-            else:
-                logging.error(f"Unexpected error during DeepL translation: {e}")
+            logging.error(f"Unexpected error during DeepL translation: {e}")
 
-            # Fallback to Google Translate (GT), do not check if language is supported by GT, as it is the case for all languages as in the 05/09/2024 (european date)
+            # Fallback to Google Translate (GT), do not check if language is supported by GT, as it is the case for all languages as in the 05/09/2024 (european date format)
             logging.info("Switching to Google Translate due to DeepL error.")
             try:
                 Translated_text = Google_translator.translate(
                     text_to_translate, 
-                    dest=Google_language_dict_inverted[translate_language]
+                    dest=google_name_to_acronym[translate_language]
                 ).text
                 Translator_name = "gt"
                 logging.info("Translation with Google Translate successful after DeepL failure.")
@@ -607,17 +599,17 @@ def gd_translator(text_to_translate: str, translate_language: str) -> tuple[str,
             except Exception as e:
                 logging.critical(f"Error using Google Translate after DeepL failure: {e}")
                 logging.critical(f"Failed to translate message '{text_to_translate}' to '{translate_language}'.")
-                Translated_text = "An error occurred; the bot could not complete the translation. Please contact support."
+                Translated_text = "An error occurred. The bot could not complete the translation. Please contact support."
                 Translator_name = "ERROR"
 
     # If DeepL doesn't support the language, check if Google Translate does
-    elif translate_language in Google_language_dict_inverted:
+    elif translate_language in google_name_to_acronym:
         logging.info("Language appears to be supported by Google Translate.")
 
         try:
             Translated_text = Google_translator.translate(
                 text_to_translate, 
-                dest=Google_language_dict_inverted[translate_language]
+                dest=google_name_to_acronym[translate_language]
             ).text
             Translator_name = "gt"
             logging.info("Translation with Google Translate successful.")
@@ -659,8 +651,12 @@ async def trasend(interaction: discord.Interaction,text_received: str,translate_
     Returns :
     - None
     """
-
     logging.info(f"Translate request from {interaction.user.display_name} ({interaction.user.name}) using trsend with \"{translate_langage}\" language.")
+
+    if interaction.user.bot:
+        return
+    elif not interaction.guild_id :
+        await interaction.user.send("This command isn't meant to be used in DMs !")
     await interaction.response.send_message('Message received, processing...', ephemeral=True)
     Translated_text, Translator_name = gd_translator(text_to_translate = text_received, translate_language = translate_langage)
 
@@ -696,88 +692,76 @@ async def trasend_autocompletion(
     Returns:
     - typing.List[discord.app_commands.Choice[str]]: A list of autocomplete choices that match the user's input.
     """
-    # Initialize the list to hold autocomplete choices
+    # Initialize the list to hold autocomplete choices and limit choices to 25 'prediction'
     Return_list = []
+    Max_choices = 25
 
     # Filter the available language choices based on user input
-    filtered_lang_ch_auto = [
-        langage_choice for langage_choice in lang_ch_auto
-        if tmp_typing.lower() in langage_choice.lower()
+    Filtered_autofill = [
+        Langage_choice for Langage_choice in language_autofill_choices
+        if tmp_typing.lower() in Langage_choice.lower()
     ]
-
-    # Limit the number of choices to a maximum of 25
-    max_choices = 25
-    for langage_choice in filtered_lang_ch_auto[:max_choices]:
+ 
+    for Langage_choice in Filtered_autofill[:Max_choices]:
         Return_list.append(
-            discord.app_commands.Choice(name=langage_choice, value=langage_choice)
+            discord.app_commands.Choice(name=Langage_choice, value=Langage_choice)
         )
 
     return Return_list
 
 
 @bot.event
-async def on_raw_reaction_add(Reaction):
-    if Reaction.user_id == bot.user.id:
-        return
-    channel = bot.get_channel(Reaction.channel_id)
-    message = await channel.fetch_message(Reaction.message_id)
+async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
+    """
+    Event handler for when a reaction is added to a message.
     
-    flag = Reaction.emoji.name
-    if flag in langues:
-        user = await bot.fetch_user(Reaction.user_id)
-        if langues[flag] == 'X' :
-            await message.reply(f'Translation refused, the country selected does not have a langage defined. (at the time this version of the code was written, the country is either Belgium or Switzerland)')
-            await message.remove_reaction(Reaction.emoji, user)
-        else :
-            logging.info(f"({message.guild.name}) Message in {message.channel.name}: \"{message.content}\" Reaction added by {Reaction.member} (message by {message.author.name} ({message.author.global_name})) for Deepl \"{langues[flag]}\" Translation .")
-            logging.info(f"\"{Reaction.member}\" used the flag_{flag} reaction")
-            if len(message.content) <= 0 :
-                logging.info(f"No message, error handled correctly")
-                await message.reply("Error, no text found.", mention_author= False)
-                await message.remove_reaction(Reaction.emoji, user)
+    Args:
+    - payload (discord.RawReactionActionEvent): The payload containing information about the reaction.
+    """
+    # Ignore reactions added by bots and phantom reactions
+    if payload.member.bot:
+        return
+    elif not payload.guild_id :
+        return
+    Channel = bot.get_channel(payload.channel_id)
+    Message = await Channel.fetch_message(payload.message_id)
+    Flag = payload.emoji.name
+    try :
+        if Flag in deepl_flag_to_acronym :
+            logging.info(f"\"{payload.member}\" used the flag_{Flag} reaction on a message by {Message.author}")
+            logging.info("Deepl seems to be able to handle that language.")
+            User = await bot.fetch_user(payload.user_id)
+            if deepl_flag_to_acronym[Flag] == 'X':
+                logging.info("It was Belgium or Switzerland, abort mission")
+                await User.send(f'Translation refused, the country selected does not have a langage defined. (at the time this version of the code was written, the country is either Belgium or Switzerland)')
+                await Message.remove_reaction(payload.emoji, User)
             else:
-                try :
-                    embed = discord.Embed(title= f"Deepl Translation to {lang_n[langues[flag]]}" ,description= f"{Deepl_translator.translate_text(message.content, target_lang=langues[flag])}")
-                    embed.set_author( name= user, icon_url= user.avatar)
-                    await message.reply(embed=embed, mention_author= False)
-                    await message.remove_reaction(Reaction.emoji, user)
-                except Exception as e : 
-                    try :
-                        logging.error(f'Error while using Deepl (Deepl module) : {e}')
-                        logging.info(f'Switching to googletrans module')
-                        translation = gt.translate(message.content, dest=langues_gt[flag])
-                        embed = discord.Embed(title= f"Google Translation to {lang_n_gt[langues_gt[flag]]}" ,description= f"{translation.text}\n\n *:warning: Due to an error, the translation switched to Google translate, it might be less accurate*")
-                        embed.set_author( name= user, icon_url= user.avatar)
-                        await message.reply(embed=embed, mention_author= False)
-                        await message.remove_reaction(Reaction.emoji, user)
-                    except Exception as e : 
-                        logging.critical(f'Error while using Google Translate (googletrans module) : {e}')
-                        embed = discord.Embed(title= f"Sorry, {user}" ,description= f"For an unknown reason, the bot wasn't able to translate that message to {lang_n[langues[flag]]}, \n is this continues, please contact the owner of the bot or natpol50.")
-                        embed.set_author( name= "ERROR", icon_url= "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTrJ_BIHPu0Q0ZeOwRso3svFNrvYEN_uw7GyA&usqp=CAU")
-                        await message.reply(embed=embed, mention_author= False)
-                        await message.remove_reaction(Reaction.emoji, user)
-    elif flag in langues_gt:
-        user = await bot.fetch_user(Reaction.user_id)
-        logging.info(f"({message.guild.name}) Message in {message.channel.name}: \"{message.content}\" Reaction added by {Reaction.member} (message by {message.author.name} ({message.author.global_name})) for google traduction \"{langues_gt[flag]}\" Translation.")
-        logging.info(f"\"{Reaction.member}\" used the flag_{flag} reaction")
-        
-        if len(message.content) <= 0 :
-            logging.info(f"No message, error handled correctly")
-            await message.reply("Error, no text found.", mention_author= False)
-            await message.remove_reaction(Reaction.emoji, user)
-        else:
-            try :
-                translation = gt.translate(message.content, dest=langues_gt[flag])
-                embed = discord.Embed(title= f"Google Translation to {lang_n_gt[langues_gt[flag]]}" ,description= f"{translation.text}")
-                embed.set_author( name= user, icon_url= user.avatar)
-                await message.reply(embed=embed, mention_author= False)
-                await message.remove_reaction(Reaction.emoji, user)
-            except Exception as e : 
-                logging.critical(f'Error while using google translate (googletrans module) : {e}')
-                embed = discord.Embed(title= f"Sorry, {user}" ,description= f"For an unknown reason, the bot wasn't able to translate that message to {lang_n_gt[langues_gt[flag]]}, \n is this continues, please contact the owner of the bot or natpol50.")
-                embed.set_author( name= "ERROR", icon_url= "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTrJ_BIHPu0Q0ZeOwRso3svFNrvYEN_uw7GyA&usqp=CAU")
-                await message.reply(embed=embed, mention_author= False)
-                await message.remove_reaction(Reaction.emoji, user)
+                if len(Message.content) <= 0 :
+                    logging.info(f"Nevermind, message was empty")
+                    await User.send("Error, no text found.")
+                    await Message.remove_reaction(payload.emoji, User)
+                else :
+                    Translated_message, Translator = gd_translator(Message.content , deepl_acronym_to_name[deepl_flag_to_acronym[Flag]])
+        elif Flag in google_flag_to_acronym :
+            logging.info(f"\"{payload.member}\" used the flag_{Flag} reaction on a message by {Message.author}")
+            logging.info("Deepl seems to be able to handle that language.")
+            User = await bot.fetch_user(payload.user_id)
+            if len(Message.content) <= 0 :
+                logging.info(f"Nevermind, message was empty")
+                await User.send("Error, no text found.")
+                await Message.remove_reaction(payload.emoji, User)
+            else :
+                Translated_message, Translator = gd_translator(Message.content , google_acronym_to_name[google_flag_to_acronym[Flag]])
+    except Exception as e:
+        logging.error(f"The bot wasn't able to handle a reaction translation. Error : {e}")
+    
+    try:
+        await User.send(Message.content)
+        await User.send(f"-> {Flag} ({Translator})")
+        await User.send(Translated_message)
+        await Message.remove_reaction(payload.emoji, User)
+    except Exception as e:
+        logging.error(f"The bot wasn't able to send the messages to the user {User.display_name}")
 
 
 
