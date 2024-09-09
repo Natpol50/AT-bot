@@ -617,6 +617,7 @@ google_acronym_to_name = {
     'tl': 'Filipino',
     'fi': 'Finnish',
     'fr': 'French',
+    'fr': 'French (France)',
     'fy': 'Frisian',
     'gl': 'Galician',
     'ka': 'Georgian',

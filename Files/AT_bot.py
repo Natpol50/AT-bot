@@ -697,6 +697,8 @@ def gd_translator(text_to_translate: str, translate_language: str) -> tuple[str,
                 text_to_translate, 
                 target_lang=deepl_name_to_acronym[translate_language]
             )
+            if Translated_text.detected_source_langu not in deepl_name_to_acronym :
+                 raise NotImplementedError("The source language is in fact, not supported by deepl")
             Translator_name = "dpl"
             logging.info("Translation with DeepL successful.")
 
@@ -709,7 +711,7 @@ def gd_translator(text_to_translate: str, translate_language: str) -> tuple[str,
                 Translated_text = Google_translator.translate(
                     text_to_translate, 
                     dest=google_name_to_acronym[translate_language]
-                ).text
+                )
                 Translator_name = "gt"
                 logging.info("Translation with Google Translate successful after DeepL failure.")
 
