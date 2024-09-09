@@ -1,7 +1,30 @@
+# -----------------------------------------------------------------------------
+#  AT_bot.py
+#  Copyright (c) 2024 Asha the Fox 🦊
+#  All rights reserved.
+#
+#  This is the main code for the ATbot project. 
+#  The goal of ATbot is to give access to easy translation for free to as many people as possible.
+#  To do so, the bot code is separated in multiple parts : 
+#      Boot - All the parts dedicated to correctly starting the script.
+#      Configuration - All the parts dedicated to configuring the bot.
+#      bot loops - Ddefines all the bot looping tasks (or bootup ones)
+#      Bot code - All the commands the bot does. 
+#
+# -----------------------------------------------------------------------------
+
+__author__ = "Asha Geyon (Natpol50)"
+__version__ = 1.0
+__last_revision__ = '2024-09-09'
+
+
+if __name__ != "__main__":
+    print("This isn't a library module! What are you planning on doing?")
+
 import os
 import subprocess
 import logging
-
+import requests
 
 
 
@@ -10,10 +33,22 @@ import logging
 ///////BOOT///////
 //////////////////
 """
+# -----------------------------------------------------------------------------
+#  AT_bot.py , boot
+#  Copyright (c) 2024 Asha the Fox 🦊
+#  All rights reserved.
+#
+#  This is the part of the script that check if everything's in order and then initialize logging.
+#  It can also install the necessary packages if they are not installed.
+#
+#  Functions:
+#      bootup_function() - Verifies if everything seems right for the script to run and initialize logging.
+#
+# -----------------------------------------------------------------------------
 
 def bootup_function() -> None:
     """
-    Verifies if everything seems right and initialize logging.
+    Verifies if everything seems right for the script to run and initialize logging.
     
     This function will : 
      - Verify if the script has been used before (if not, installs the required libraries)
@@ -131,12 +166,44 @@ def bootup_function() -> None:
 
 
 
+def check_for_update():
+    VERSION_URL = 'https://asha-services.org/s/8LM99TbsQQAZrB3/download/Latest.txt'  # Remote version file hosted on main developper nextcloud instance
+    try:
+        response = requests.get(VERSION_URL)
+        response.raise_for_status()  # Just in case of any error
+        remote_version = response.text.strip()
+        
+        if float(remote_version) != __version__:
+            os.system("title ATbot - New version available")
+            print(f"A new version is available : v{remote_version} ! ( current is v{__version__})")
+            print("Please, download the last version from https://github.com/Natpol50/AT-bot/releases")
+            input("Press enter to continue...")
+
+
+    except requests.RequestException as e:
+        print(f"There was and error while checking for new versions : {e}")
+        logging.warning(f"There was and error while checking for new versions : {e}")
+
+
 """
 ///////////////////////////////////////////////////
 /////// Configuration,bootup and setting up ///////
 ///////////////////////////////////////////////////
 """
+# -----------------------------------------------------------------------------
+#  AT_bot.py , config
+#  Copyright (c) 2024 Asha the Fox 🦊
+#  All rights reserved.
+#
+#  This is the part of the script that'll make the user choose a configuration and allows the bot to boot.
+#
+#  Functions:
+#      bot_picker(input_list: list) - Displays a CLI menu to choose an item from the input_list using the curses library.
+#      config_init() - Sets up the configuration file for ATbot.
+#      setup_environment() - Sets up the initial environment for the ATbot configuration.
 
+#
+# -----------------------------------------------------------------------------
 
 import discord
 from discord.ext import commands , tasks
@@ -145,7 +212,6 @@ from discord.interactions import Interaction
 from googletrans import Translator
 import typing
 from Lists import *
-import requests
 import configparser
 import curses
 import Tokenverif
@@ -157,7 +223,7 @@ import datetime
 import Displays
 
 
-def bot_picker(input_list) -> str:
+def bot_picker(input_list: list) -> str:
     """
     Displays a CLI menu to choose an item from the input_list using the curses library.
 
@@ -343,7 +409,24 @@ def bot_bootup(selected_bot, config_file, config) -> None:
     # Retrieve API keys from the configuration file
     Discord_api_key = config.get(selected_bot, 'discord')
     Deepl_api_key = config.get(selected_bot, 'deepl')
+    
 
+    # Test API keys
+    import Tokenverif
+
+    if Tokenverif.DS_token(Discord_api_key) == False :
+        print("The discord api key seems invalid")
+        logging.critical("The discord api key seems invalid, closing program...")
+        print(f"Maybe bad internet?")
+        input("Press Enter to exit...")
+        exit()
+    elif Tokenverif.DPL_token(Deepl_api_key) == False :
+        print("The deepl api key seems invalid ! Translation quality will lessen.")
+        logging.warning("The deepl api key seems invalid. Not critical, just less quality. Continuing...")
+        print(f"Maybe bad internet?")
+
+    del Tokenverif
+    
     # Initialize Deepl and Google translators
     Deepl_translator = deepl.Translator(Deepl_api_key)
     Google_translator = Translator()
@@ -360,17 +443,13 @@ def bot_bootup(selected_bot, config_file, config) -> None:
     bot.remove_command('help')  # Remove the default help command
 
 
-"""
-//////////////////////
-///////Bot boot///////
-//////////////////////
-"""
-
-# First, we load everything to avoid any bot not defined error, then we load the bot code.
+# First, we load everything to avoid any bot not defined error,
 bootup_function()
 del bootup_function
-
-
+# Second, we check for any update
+check_for_update()
+del check_for_update
+#Finally, we load the bot bootloader
 config_init()
 setup_environment()
 bot_bootup(Selected_bot,Config_file,Config)
@@ -378,7 +457,30 @@ del bot_picker
 del config_init
 del setup_environment
 
-def ASCII(image_url, width, height) -> str:
+"""
+//////////////////////
+///////Bot loops///////
+//////////////////////
+"""
+# -----------------------------------------------------------------------------
+#  AT_bot.py , loops
+#  Copyright (c) 2024 Asha the Fox 🦊
+#  All rights reserved.
+#
+#  This is the part of the script that define and handle all the automated tasks the bot must do
+#
+#  Functions:
+#      ASCII(image_url: str, width: int, height: int) - Converts an image from a URL to an ASCII art representation (allows us to display bot profile picture in CLIs).
+#      format_uptime(uptime) - Formats a timedelta object into a human-readable string representing uptime (for status loop).
+#      task.loop(seconds=60) : status() - Updates the bot's status and logs the current uptime every 60 seconds.
+#      bot.event : on_ready() - Event handler for when the bot is ready, displays relevant bot information.
+#
+# -----------------------------------------------------------------------------
+
+
+
+
+def ASCII(image_url: str, width: int, height: int) -> str:
     """
     Converts an image from a URL to an ASCII art representation.
 
@@ -551,6 +653,21 @@ async def on_ready() -> None:
 //////////////////////
 """
 
+# -----------------------------------------------------------------------------
+#  AT_bot.py , commands
+#  Copyright (c) 2024 Asha the Fox 🦊
+#  All rights reserved.
+#
+#  This is the part of the script that define and handle which and how the bots reacts to commands.
+#
+#  Functions:
+#      gd_translator(text_to_translate: str, translate_language: str) - Translation handler to avoid code repetition (DRY principle)
+#      bot.tree.command : trsend(interaction: discord.Interaction,text_received: str,translate_langage: str)  - Handles the translation and sending of a message using the bot.
+#      @trsend.autocomplete : trsend_autocompletion( interaction: discord.Interaction, tmp_typing: str ) - Provides autocompletion suggestions for the 'translate_langage' parameter in the 'trsend' command.
+#      bot.event : def on_raw_reaction_add(payload: discord.RawReactionActionEvent) - Event handler for when a reaction is added to a message, if reaction is a country flag, translates.
+#
+# -----------------------------------------------------------------------------
+
 
 def gd_translator(text_to_translate: str, translate_language: str) -> tuple[str, str]:
     """
@@ -633,7 +750,7 @@ def gd_translator(text_to_translate: str, translate_language: str) -> tuple[str,
 @bot.tree.command(name='trsend', description='Send a translated message with the bot')
 @discord.app_commands.describe(text_received="The message you want to send using the bot.",translate_langage="The language you want your message to be in.")
 @discord.app_commands.rename(text_received="message",translate_langage="langage")
-async def trasend(interaction: discord.Interaction,text_received: str,translate_langage: str) -> None:
+async def trsend(interaction: discord.Interaction,text_received: str,translate_langage: str) -> None:
     """
     Handles the translation and sending of a message using the bot.
 
@@ -677,13 +794,10 @@ async def trasend(interaction: discord.Interaction,text_received: str,translate_
             await wh.delete()
             break  # Exit the loop once the specific webhook is deleted
 
-@trasend.autocomplete("translate_langage")
-async def trasend_autocompletion(
-    interaction: discord.Interaction,  # Taking the interaction just in case
-    tmp_typing: str
-) -> typing.List[discord.app_commands.Choice[str]]:
+@trsend.autocomplete("translate_langage")
+async def trsend_autocompletion( interaction: discord.Interaction, tmp_typing: str ) -> typing.List[discord.app_commands.Choice[str]]:
     """
-    Provides autocomplete suggestions for the 'translate_langage' parameter in the 'trasend' command.
+    Provides autocompletion suggestions for the 'translate_langage' parameter in the 'trsend' command.
 
     Args:
     - interaction (discord.Interaction): The interaction object that triggered the autocomplete.
@@ -765,6 +879,13 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
 
 
 
+
+
+
+
+
+
+# We then, after we loaded everything, runs the bot.
 bot.run(Discord_api_key)
 
 input()

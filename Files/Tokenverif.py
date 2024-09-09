@@ -14,7 +14,7 @@
 
 __author__ = "Asha Geyon (Natpol50)"
 __version__ = 0.5
-__all__ = ['run_bot', 'DS_token', 'DPL_token']
+__all__ = ['DS_token', 'DPL_token']
 __last_revision__ = '2024-09-05'
 
 import discord
@@ -22,22 +22,26 @@ import logging
 from discord.ext import commands
 import deepl
 
-def run_bot(bot, token):
+async def attempt_login(bot, token):
     """
-    Runs the bot with a given token.
-    
+    Try to login the bot to verify the token validity.
+
     Args:
-    - bot(commands.Bot): The bot instance
-    - token(str): The bot token to run
+    - bot (commands.Bot): The bot instance.
+    - token (str): The Discord bot token to verify.
 
     Returns:
-    - bool: True if the token is valid, False otherwise
+    - bool: True if the token is valid, False otherwise.
     """
     try:
-        bot.run(token)
-    except discord.LoginFailure as E:
+        await bot.login(token)
+        await bot.close()  # Immediately close the connection after successful login
+        print("Discord token seems to be valid, continuing...")
+        logging.info("Discord token seems to be valid, continuing...")
+        return True
+    except discord.LoginFailure as e:
+        logging.error(f"Token verification failed: {e}")
         print("Token verification failed.")
-        logging.info(f"Token verification failed. ({E})")
         return False
 
 def DS_token(token):
@@ -48,11 +52,18 @@ def DS_token(token):
     - token (str): The Discord bot token to verify.
     
     Returns:
-    - bool: True if the token is valid, False otherwise (from the run_bot function).
+    - bool: True if the token is valid, False otherwise.
     """
     logging.info("Started the Discord token checker.")
     bot = commands.Bot(command_prefix='none', intents=discord.Intents.default())
-    return run_bot(bot, token)
+    
+    # Use asyncio to run the token verification
+    import asyncio
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    
+    return loop.run_until_complete(attempt_login(bot, token))
+
 
 def DPL_token(token):
     """
@@ -71,6 +82,7 @@ def DPL_token(token):
         logging.info("Attempting to translate 'Asha le renard semble content' to English (EN-GB).")
         result = translator.translate_text('Asha le renard semble content', target_lang='EN-GB')
         logging.info(f"Translation result: {result}")
+        print("Attempting to translate 'Asha le renard semble content' to English (EN-GB).")
         print(f"Translation result: {result} \n Everything seems right")
         return True
     except Exception as E:
