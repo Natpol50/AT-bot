@@ -24,7 +24,7 @@ if __name__ != "__main__":
 import os
 import subprocess
 import logging
-import requests
+
 
 
 
@@ -46,7 +46,7 @@ import requests
 #
 # -----------------------------------------------------------------------------
 
-def bootup_function() -> None:
+def bootup_function() -> bool:
     """
     Verifies if everything seems right for the script to run and initialize logging.
     
@@ -60,9 +60,9 @@ def bootup_function() -> None:
     - None
     
     Returns:
-    - None
+    - bool: wether the function finished correctly or not.
     """
-    def log_init() -> None:
+    def log_init() -> bool:
         """
         Initialize logging for the script.
         Used after the first time setup flag has been checked
@@ -71,30 +71,34 @@ def bootup_function() -> None:
         - None
     
         Returns:
-        - None
+        - bool: wether the function finished correctly or not.
         """
-        import pathlib
-        import datetime
+        try :
+            import pathlib
+            import datetime
 
-        Log_folder = f'{pathlib.Path(__file__).parent.absolute()}/logs'
+            Log_folder = f'{pathlib.Path(__file__).parent.absolute()}/logs'
 
-        if not os.path.exists(Log_folder):
-            os.makedirs(Log_folder)
+            if not os.path.exists(Log_folder):
+                os.makedirs(Log_folder)
 
-        Log_file = os.path.join(
-            Log_folder,
-            f"{datetime.datetime.now():%Y-%m-%d_%H-%M-%S}.log"
-        )
+            Log_file = os.path.join(
+                Log_folder,
+                f"{datetime.datetime.now():%Y-%m-%d_%H-%M-%S}.log"
+            )
 
-        logging.basicConfig(
-            filename=Log_file,
-            level=logging.INFO,
-            format="%(asctime)s [%(levelname)s]: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
-        )
-        logging.info("Script started.")
+            logging.basicConfig(
+                filename=Log_file,
+                level=logging.INFO,
+                format="%(asctime)s [%(levelname)s]: %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S"
+            )
+            logging.info("Script started.")
+            return True
+        except Exception as e :
+            return False        
     
-    Flag_file = "Firstboot.flag"  # Flag to indicate first-time setup
+    Flag_file = "Firstboote.flag"  # Flag to indicate first-time setup
 
     if not os.path.exists(Flag_file):
         import Dependency_installer as install
@@ -107,7 +111,9 @@ def bootup_function() -> None:
             'configparser',
             'windows-curses',
             'Pillow',
-            'deepl'
+            'deepl',
+            'requests',
+            'aiohttp'
         ]
 
         Total_size = 0
@@ -116,6 +122,14 @@ def bootup_function() -> None:
         print("As this is the first time the script is running, Dependencies will be installed.")
 
         # Attempt to install pathlib separately, as pathlib is needed for the logging to work. (refer to log_init() function)
+        try:
+            subprocess.check_call(['pip', 'install', 'pathlib'])
+        except subprocess.CalledProcessError as e:
+            print(f"There was an error installing pathlib: {e}.")
+            input("\nPress enter to open the bug report page [https://github.com/Natpol50/AT-bot/issues]")
+            subprocess.run(['powershell', '-Command', f"start-Process {'https://github.com/Natpol50/AT-bot/issues'}"])
+            input('Press enter to exit...')
+            exit()
         try:
             subprocess.check_call(['pip', 'install', 'pathlib'])
         except subprocess.CalledProcessError as e:
@@ -161,7 +175,7 @@ def bootup_function() -> None:
     else:
         log_init()
         logging.info("Script has already run before, skipping dependency installation.")
-
+        return True
 
 
 
@@ -205,22 +219,28 @@ def check_for_update():
 #
 # -----------------------------------------------------------------------------
 
-import discord
-from discord.ext import commands , tasks
-import deepl
-from discord.interactions import Interaction
-from googletrans import Translator
-import typing
-from Lists import *
-import configparser
-import curses
-import Tokenverif
-from io import BytesIO
-from PIL import Image
-import asyncio
-import pathlib
-import datetime
-import Displays
+if bootup_function():
+    import discord
+    from discord.ext import commands , tasks
+    import deepl
+    from discord.interactions import Interaction
+    from googletrans import Translator
+    import typing
+    from Lists import *
+    import configparser
+    import curses
+    import Tokenverif
+    from io import BytesIO
+    from PIL import Image
+    import asyncio
+    import pathlib
+    import datetime
+    import Displays
+    import requests
+else:
+    print("Initialization failed!")
+    logging.critical("Initialization failed !")
+    exit(1)
 
 
 def bot_picker(input_list: list) -> str:
