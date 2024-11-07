@@ -14,8 +14,8 @@
 # -----------------------------------------------------------------------------
 
 __author__ = "Asha Geyon (Natpol50)"
-__version__ = 1.0
-__last_revision__ = '2024-09-09'
+__version__ = 1.1
+__last_revision__ = '2024-11-07'
 
 
 if __name__ != "__main__":
@@ -104,15 +104,12 @@ def bootup_function() -> bool:
         import Dependency_installer as install
 
         Dependencies = [
-            'discord.py',
+            'discord.py==2.4.0',
             'googletrans==4.0.0-rc.1',
-            'typing',
-            'requests',
-            'configparser',
-            'windows-curses==2.3.1',
-            'Pillow',
-            'deepl',
-            'requests'
+            'windows-curses==2.4.0',
+            'Pillow==11.0.0',
+            'deepl==1.19.1',
+            'requests==2.32.3'
         ]
 
         Total_size = 0
@@ -122,15 +119,7 @@ def bootup_function() -> bool:
 
         # Attempt to install pathlib separately, as pathlib is needed for the logging to work. (refer to log_init() function)
         try:
-            subprocess.check_call(['pip', 'install', 'pathlib'])
-        except subprocess.CalledProcessError as e:
-            print(f"There was an error installing pathlib: {e}.")
-            input("\nPress enter to open the bug report page [https://github.com/Natpol50/AT-bot/issues]")
-            subprocess.run(['powershell', '-Command', f"start-Process {'https://github.com/Natpol50/AT-bot/issues'}"])
-            input('Press enter to exit...')
-            exit()
-        try:
-            subprocess.check_call(['pip', 'install', 'pathlib'])
+            subprocess.check_call(['pip', 'install', 'pathlib==1.0.1'])
         except subprocess.CalledProcessError as e:
             print(f"There was an error installing pathlib: {e}.")
             input("\nPress enter to open the bug report page [https://github.com/Natpol50/AT-bot/issues]")
@@ -187,9 +176,9 @@ def check_for_update():
         response.raise_for_status()  # Just in case of any error
         remote_version = response.text.strip()
         
-        if float(remote_version) != __version__:
+        if float(remote_version) > float(__version__):
             os.system("title ATbot - New version available")
-            print(f"A new version is available : v{remote_version} ! ( current is v{__version__})")
+            print(f"A new version is available : v{remote_version} ! ( current is v{__version__} )")
             print("Please, download the last version from https://github.com/Natpol50/AT-bot/releases")
             input("Press enter to continue...")
 
