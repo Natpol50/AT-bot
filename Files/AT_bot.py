@@ -98,7 +98,7 @@ def bootup_function() -> bool:
         except Exception as e :
             return False        
     
-    Flag_file = "Firstboote.flag"  # Flag to indicate first-time setup
+    Flag_file = "Firstboot.flag"  # Flag to indicate first-time setup
 
     if not os.path.exists(Flag_file):
         import Dependency_installer as install
@@ -109,11 +109,10 @@ def bootup_function() -> bool:
             'typing',
             'requests',
             'configparser',
-            'windows-curses',
+            'windows-curses==2.3.1',
             'Pillow',
             'deepl',
-            'requests',
-            'aiohttp'
+            'requests'
         ]
 
         Total_size = 0
@@ -171,6 +170,7 @@ def bootup_function() -> bool:
                 "A simple flag indicating that the script has run before.\n"
                 "Asha thanks you for reading this, but seriously, don't you have anything else to do?"
             )
+        return True
         
     else:
         log_init()
