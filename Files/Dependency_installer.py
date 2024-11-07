@@ -23,7 +23,8 @@ import os
 import json
 import urllib.request
 import importlib.util
-
+import sys
+import platform
 
 Trans_dic = {
     # A dictionary that maps package names to their corresponding import names.
@@ -35,29 +36,55 @@ Trans_dic = {
 
 }
 
+def is_windows_curses_needed() -> bool:
+    """
+    Check if windows-curses package is needed on this system.
+    Returns True if on Windows and proper curses is not installed.
+    """
+    if platform.system() != 'Windows':
+        return False
+    
+    try:
+        import curses
+        # Try to initialize curses to verify it actually works
+        try:
+            stdscr = curses.initscr()
+            curses.endwin()
+            return False  # If we get here, curses works properly
+        except Exception:
+            return True  # Curses exists but doesn't work (likely the dummy module)
+    except ImportError:
+        return True  # No curses module at all
+
 def get_package_size(package_name: str) -> float:
     """
     Retrieve the size of a package from PyPI. The size is reported in MB.
-
     Args:
     - package_name (str): The name of the package, version constraint will not be treated.
-
     Returns:
-    - float: Size of the package in MB, or -1 if an error occurred, 0 of already installed.
+    - float: Size of the package in MB, or -1 if an error occurred, 0 if already installed.
     """
-    # Removes the package version constraint ( honestly, it's because i don't really know how to verfiy with a specific version.)
+    # Removes the package version constraint
     Base_package_name = package_name.split('==')[0]
-    
-    # Map package name to importable module name if available
-    if Base_package_name in Trans_dic :
-        Importable_module_name = Trans_dic[Base_package_name]
-    else :
-        Importable_module_name = Base_package_name
-    
-    # Check if the package is already installed
-    if importlib.util.find_spec(Importable_module_name) is not None:
-        logging.info(f"Package '{Base_package_name}' is already installed.")
-        return 0.0
+   
+    # Special handling for windows-curses
+    if Base_package_name == 'windows-curses':
+        if is_windows_curses_needed():
+            logging.info("Windows-curses package is required and not properly installed.")
+        else:
+            logging.info("Proper curses implementation is already available.")
+            return 0.0
+    else:
+        # Map package name to importable module name if available
+        if Base_package_name in Trans_dic:
+            Importable_module_name = Trans_dic[Base_package_name]
+        else:
+            Importable_module_name = Base_package_name
+       
+        # Check if the package is already installed (except for windows-curses)
+        if importlib.util.find_spec(Importable_module_name) is not None:
+            logging.info(f"Package '{Base_package_name}' is already installed.")
+            return 0.0
 
     try:
         # Fetch package information from PyPI
@@ -66,17 +93,14 @@ def get_package_size(package_name: str) -> float:
             Package_info = json.loads(response.read().decode())
             Version = Package_info['info']['version']
             Release_data = Package_info['releases'][Version]
-
             # Calculate the total size of the package in bytes
             Total_size_bytes = sum(file['size'] for file in Release_data)
-            
+           
             del Package_info
             del Version
             del Release_data
-
             # Convert size to MB
             Total_size_mb = Total_size_bytes / (1024 ** 2)
-
             logging.info(f"The size of the '{Base_package_name}' package is {Total_size_mb:.2f} MB")
             return Total_size_mb
     except Exception as e:
