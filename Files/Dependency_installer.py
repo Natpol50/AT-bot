@@ -12,9 +12,9 @@
 # -----------------------------------------------------------------------------
 
 __author__ = "Asha Geyon (Natpol50)"
-__version__ = 1.0
+__version__ = 1.1
 __all__ = ['get_package_size', 'install_packages']
-__last_revision__ = '2024-09-05'
+__last_revision__ = '2024-11-09'
 
 
 import subprocess

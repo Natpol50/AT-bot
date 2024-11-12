@@ -333,7 +333,7 @@ def setup_environment() -> None:
 
     os.system('cls')
 
-    if Selected_bot == 'New bot':
+    if Selected_bot == 'New bot/config':
         # Handle new bot creation
         os.system("title ATbot - New Bot/config")
         Selected_bot = input("Choose a name for the new bot/config: ")
@@ -677,11 +677,34 @@ async def on_ready() -> None:
 #
 # -----------------------------------------------------------------------------
 
+def detect_language(text: str) -> bool:
+    """
+    Uses the DeepL API to detect the language of a given text and checks if the language is supported by DeepL.
+
+    Args:
+    - text (str): The text to detect the language of.
+
+    Returns:
+    - bool: True if the language is supported by DeepL, False otherwise.
+    """
+    try:
+        # Use DeepL API to detect the language
+        detected_language = Deepl_translator.detect_language(text)
+
+        if detected_language in deepl_acronym_to_name:
+            return True
+        else:
+            return True
+    except Exception as e:
+        logging.error(f"An error occurred while detecting the language: {e}")
+        return False
+    
+
 
 def gd_translator(text_to_translate: str, translate_language: str) -> tuple[str, str]:
     """
     Translation handler to avoid code repetition (DRY principle). This function detects which translation service 
-    (Google Translate or DeepL) to use, preferring DeepL when available, and should be hable to handle most errors.
+    (Google Translate or DeepL) to use, preferring DeepL when available, and should be able to handle most errors.
 
     Args:
     - text_to_translate (str): The text to translate.
@@ -698,7 +721,7 @@ def gd_translator(text_to_translate: str, translate_language: str) -> tuple[str,
     logging.info(f"gd_translator received a request to translate into '{translate_language}'.")
 
     # First, try to use DeepL if the target language is supported (deepl usually offer better accuracy)
-    if translate_language in deepl_name_to_acronym:
+    if translate_language in deepl_name_to_acronym and detect_language(text_to_translate):
         logging.info("Language appears to be supported by DeepL. Attempting translation with DeepL.")
 
         try:
@@ -706,21 +729,19 @@ def gd_translator(text_to_translate: str, translate_language: str) -> tuple[str,
                 text_to_translate, 
                 target_lang=deepl_name_to_acronym[translate_language]
             )
-            if Translated_text.detected_source_langu not in deepl_name_to_acronym :
-                 raise NotImplementedError("The source language is in fact, not supported by deepl")
             Translator_name = "dpl"
             logging.info("Translation with DeepL successful.")
 
         except Exception as e:
             logging.error(f"Unexpected error during DeepL translation: {e}")
 
-            # Fallback to Google Translate (GT), do not check if language is supported by GT, as it is the case for all languages as in the 05/09/2024 (european date format)
+            # Fallback to Google Translate (GT)
             logging.info("Switching to Google Translate due to DeepL error.")
             try:
                 Translated_text = Google_translator.translate(
                     text_to_translate, 
                     dest=google_name_to_acronym[translate_language]
-                )
+                ).text
                 Translator_name = "gt"
                 logging.info("Translation with Google Translate successful after DeepL failure.")
 
