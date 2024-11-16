@@ -6,7 +6,7 @@ Asha's Translation bot (or auto if you don't want my name here) is a Discord bot
 ## Features
 
 - Free
-- Easily hostable
+- Easily hostable on your machine
 - Translation using the `/trsend` slash command
 - Translation by reacting with country flag emojis
 - Supports multiple bot configurations
@@ -39,7 +39,7 @@ Before installing ATbot, make sure you have:
 1. Download the latest release from [GitHub Releases](https://github.com/Natpol50/AT-bot/releases)
 2. Extract the ZIP file to your desired location
 3. Double-click `Start bot.bat` to launch the bot
-   - On first run, the bot should install required dependencies, if error occurs. Please delete Firstboot.flag and restart the bot.
+   - On first run, the script should install required dependencies, if error occurs. Please delete Firstboot.flag and restart the bot.
    - Follow the setup wizard to configure your bot token and DeepL API key
 
 ## Configuration
