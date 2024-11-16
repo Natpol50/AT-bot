@@ -677,27 +677,24 @@ async def on_ready() -> None:
 #
 # -----------------------------------------------------------------------------
 
-def detect_language(text: str) -> bool:
+def detect_language(text: str) -> str:
     """
-    Uses the DeepL API to detect the language of a given text and checks if the language is supported by DeepL.
+    Uses the DeepL API to detect the language of a given text.
 
     Args:
     - text (str): The text to detect the language of.
 
     Returns:
-    - bool: True if the language is supported by DeepL, False otherwise.
+    - str: The detected language code, or an empty string if detection fails.
     """
     try:
-        # Use DeepL API to detect the language
-        detected_language = Deepl_translator.detect_language(text)
-
-        if detected_language in deepl_acronym_to_name:
-            return True
-        else:
-            return True
+        result = Deepl_translator.translate_text(text, target_lang="EN-GB")
+        detected_language = result.detected_source_lang
+        return detected_language
     except Exception as e:
         logging.error(f"An error occurred while detecting the language: {e}")
         return False
+    
     
 
 
@@ -906,8 +903,10 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
         await User.send(f"-> {Flag} ({Translator})")
         await User.send(Translated_message)
         await Message.remove_reaction(payload.emoji, User)
+        del User
     except Exception as e:
         logging.error(f"The bot wasn't able to send the messages to the user {User.display_name}")
+        del User
 
 
 
