@@ -31,7 +31,7 @@ Before installing ATbot, make sure you have:
 
 - Windows operating system
 - Python 3.8 or higher installed (Tested on Python 3.10.11)
-- A Discord bot token ([How to get one]([https://rapidapi.com/volodimir.kudriachenko/api/DiscordBot/details](https://www.writebots.com/discord-bot-token/)))
+- A Discord bot token ([How to get one](https://www.writebots.com/discord-bot-token/))
 - A DeepL API key ([How to get one](https://support.deepl.com/hc/en-us/articles/360020695820-Authentication-Key))
 
 ## Installation
