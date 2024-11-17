@@ -102,5 +102,15 @@ If you encounter any problems:
 
 Created by Asha Geyon (Natpol50) 🦊
 
+
 ## License
-I'd like to put it under CC-BY-SA , i'll look further into it someday
+This project is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0) - see the LICENSE file for details.
+This means you are free to:
+
+Share: Copy and redistribute the material in any medium or format
+Adapt: Remix, transform, and build upon the material for any purpose, even commercially
+
+Under these terms:
+
+Attribution: You must give appropriate credit, provide a link to the license, and indicate if changes were made
+ShareAlike: If you modify the material, you must distribute your contributions under the same license as the original
