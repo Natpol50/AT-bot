@@ -27,6 +27,9 @@ if __name__ != "__main__":
 import os
 import subprocess
 import logging
+import threading
+import concurrent.futures
+import sys
 
 
 def clear_console() -> None:
@@ -127,7 +130,8 @@ def bootup_function() -> bool:
             'Pillow==11.0.0',
             'deepl==1.19.1',
             'requests==2.32.3',
-            'textual==0.76.0'
+            'textual==0.76.0',
+            'psutil==5.9.8'
         ]
 
         Total_size = 0
@@ -495,12 +499,27 @@ check_for_update()
 del check_for_update
 #Finally, we load the bot bootloader
 config_init()
-setup_environment()
+
+# Parse CLI arguments for auto-config selection
+if len(sys.argv) > 1 and sys.argv[1].startswith("--config="):
+    Selected_bot = sys.argv[1].split("=", 1)[1]
+    Config.read(Config_file)
+    if Selected_bot in Config.sections():
+        logging.info(f"Using config from CLI: {Selected_bot}")
+    else:
+        print(f"Error: config '{Selected_bot}' not found.")
+        print(f"Available configs: {Config.sections()}")
+        exit(1)
+else:
+    setup_environment()
+
 bot_bootup(Selected_bot,Config_file,Config)
-Dashboard_state = Dashboard.DashboardState()
+Dashboard_state = Dashboard.DashboardState(state_path=pathlib.Path(__file__).parent / "dashboard_state.json")
+Dashboard_state.load_from_file()
 del bot_picker
 del config_init
-del setup_environment
+if 'setup_environment' in dir():
+    del setup_environment
 
 """
 //////////////////////
@@ -525,7 +544,7 @@ del setup_environment
 
 
 
-def ASCII(image_url: str, width: int, height: int) -> str:
+def ASCII(image_url: str, width: int = 20, height: int = 10) -> str:
     """
     Converts an image from a URL to an ASCII art representation.
 
@@ -637,7 +656,12 @@ async def status() -> None:
     logging.info(f"The bot has been running for {Uptime_str}.")
     set_title(f"Bot : {Selected_bot} , Uptime : {Uptime_str}.")
 
-           
+
+def _set_avatar_async(url: str) -> None:
+    """Fetch avatar, convert to ASCII, then push to dashboard state."""
+    art = ASCII(url)
+    if Dashboard_state and art:
+        Dashboard_state.set_avatar(art)
 
 
 @bot.event
@@ -653,48 +677,18 @@ async def on_ready() -> None:
     Returns:
     - None
     """
-    # Clear the command line interface
-    clear_console()
-
-    # Print bot connection details
     Bot_info = f"Connected as {bot.user.name} (ID: {bot.user.id})"
-    print(f"\n{Bot_info}\n")
-    print(ASCII(bot.user.avatar, 25, 10))
     logging.info(Bot_info)
-
-    # List bot permissions in each guild
-    for Guild in bot.guilds:
-        print(f"Permissions in guild: {Guild.name}")
-        logging.info(f"Permissions in guild: {Guild.name}")
-
-        try:
-            for Channel in Guild.channels:
-                try:
-                    # Get and print permissions for the bot in each channel
-                    permissions = Channel.permissions_for(Guild.me)
-                    Channel_info = f"    - {Channel.name} [Permission integer : {permissions.value}]"
-                    print(Channel_info)
-                    logging.info(Channel_info)
-                except Exception as e:
-                    Error_message = f"Failed to retrieve permissions for channel '{Channel.name}': {e}"
-                    print(Error_message)
-                    logging.error(Error_message)
-        except Exception as error:
-            Guild_error_message = f"Error processing channels in guild '{Guild.name}': {error}"
-            print(Guild_error_message)
-            logging.error(Guild_error_message)
-
-        print(" ")
-
-    if UPDATE_NOTICE:
-        print(UPDATE_NOTICE)
-        logging.warning(UPDATE_NOTICE)
 
     global Dashboard_started
     if not Dashboard_started:
         Dashboard_state.set_servers([Guild.name for Guild in bot.guilds])
         Dashboard_state.set_update_notice(UPDATE_NOTICE)
-        Dashboard.start_dashboard(Dashboard_state)
+        Dashboard_state.set_bot_info(str(__version__), Config_file, bot_name=bot.user.name)
+        # Build ASCII avatar in background to avoid blocking the event loop
+        avatar_url = str(bot.user.display_avatar.url)
+        _executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        _executor.submit(_set_avatar_async, avatar_url)
         Dashboard_started = True
 
     # Start the status update loop and synchronize the bot's tree (Slash commands)
@@ -706,12 +700,14 @@ async def on_ready() -> None:
 async def on_guild_join(guild: discord.Guild) -> None:
     if Dashboard_state:
         Dashboard_state.set_servers([g.name for g in bot.guilds])
+        Dashboard_state.add_event(f"Joined guild: {guild.name}")
 
 
 @bot.event
 async def on_guild_remove(guild: discord.Guild) -> None:
     if Dashboard_state:
         Dashboard_state.set_servers([g.name for g in bot.guilds])
+        Dashboard_state.add_event(f"Left guild: {guild.name}")
         
 
 
@@ -883,6 +879,8 @@ async def trsend(interaction: discord.Interaction,text_received: str,translate_l
         await interaction.user.send("This command isn't meant to be used in DMs !")
     await interaction.response.send_message('Message received, processing...', ephemeral=True)
     Translated_text, Translator_name = gd_translator(text_to_translate = text_received, translate_language = translate_langage)
+    if Dashboard_state:
+        Dashboard_state.add_event(f"trsend {translate_langage} ({Translator_name}) by {interaction.user.display_name}")
 
     # Create a webhook with a name that includes the translator name, we grab the webhook id to allow it to delete just this one.
     Webhook = await interaction.channel.create_webhook(name=interaction.user.display_name+ " " + Translator_name)
@@ -963,6 +961,8 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                     await Message.remove_reaction(payload.emoji, User)
                 else :
                     Translated_message, Translator = gd_translator(Message.content , deepl_acronym_to_name[deepl_flag_to_acronym[Flag]])
+                    if Dashboard_state:
+                        Dashboard_state.add_event(f"flag {Flag} -> {deepl_acronym_to_name[deepl_flag_to_acronym[Flag]]} ({Translator})")
         elif Flag in google_flag_to_acronym :
             logging.info(f"\"{payload.member}\" used the flag_{Flag} reaction on a message by {Message.author}")
             logging.info("Deepl seems to be able to handle that language.")
@@ -973,6 +973,8 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
                 await Message.remove_reaction(payload.emoji, User)
             else :
                 Translated_message, Translator = gd_translator(Message.content , google_acronym_to_name[google_flag_to_acronym[Flag]])
+                if Dashboard_state:
+                    Dashboard_state.add_event(f"flag {Flag} -> {google_acronym_to_name[google_flag_to_acronym[Flag]]} ({Translator})")
     except Exception as e:
         logging.error(f"The bot wasn't able to handle a reaction translation. Error : {e}")
     
@@ -995,6 +997,11 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
 
 
 # We then, after we loaded everything, runs the bot.
-bot.run(Discord_api_key)
+def _run_bot() -> None:
+    bot.run(Discord_api_key)
 
-input()
+
+bot_thread = threading.Thread(target=_run_bot, daemon=True)
+bot_thread.start()
+
+Dashboard.start_dashboard(Dashboard_state)

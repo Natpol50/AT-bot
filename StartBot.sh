@@ -5,9 +5,11 @@ echo "Starting ATbot..."
 echo
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
-  echo "Usage: ./StartBot.sh [--update] [--release]"
-  echo "  --update   Check GitHub Releases and update"
-  echo "  --release  Run the latest release if present"
+  echo "Usage: ./StartBot.sh [OPTIONS]"
+  echo "  --help        Show this help message"
+  echo "  --update      Check GitHub Releases and update"
+  echo "  --release     Run the latest release if present"
+  echo "  --config=NAME Use bot config NAME (skip picker)"
   exit 0
 fi
 
@@ -68,8 +70,12 @@ else
   exit 1
 fi
 
-# Launch the bot
-python3 "$BOT_ENTRY"
+# Launch the bot with any --config argument
+if [[ "${1:-}" == --config=* ]]; then
+  python3 "$BOT_ENTRY" "$1"
+else
+  python3 "$BOT_ENTRY"
+fi
 
 # If the bot crashes, don't close the window immediately
 status=$?

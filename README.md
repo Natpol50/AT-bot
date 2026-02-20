@@ -21,7 +21,6 @@ Asha's Translation bot (or auto if you don't want my name here) is a Discord bot
 - A GUI
 - Code overhaul someday
 - Macos and Linux support
-- Auto updates
 - Please, request features, i've ran out of ideas
 
 

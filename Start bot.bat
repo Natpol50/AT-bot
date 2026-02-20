@@ -62,8 +62,12 @@ if not defined BOT_ENTRY (
     exit /b 1
 )
 
-REM Launch the bot
-python "%BOT_ENTRY%"
+REM Launch the bot with any --config argument
+if "%1:~0,9%"=="--config=" (
+    python "%BOT_ENTRY%" "%1"
+) else (
+    python "%BOT_ENTRY%"
+)
 
 REM If the bot crashes, don't close the window immediately
 if %errorlevel% neq 0 (
@@ -75,7 +79,9 @@ if %errorlevel% neq 0 (
 goto :eof
 
 :help
-echo Usage: Start bot.bat [--update] [--release]
-echo   --update   Check GitHub Releases and update
-echo   --release  Run the latest release if present
+echo Usage: Start bot.bat [OPTIONS]
+echo   --help        Show this help message
+echo   --update      Check GitHub Releases and update
+echo   --release     Run the latest release if present
+echo   --config=NAME Use bot config NAME (skip picker)
 goto :eof
