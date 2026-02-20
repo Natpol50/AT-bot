@@ -74,13 +74,13 @@ Created and maintained by Asha Geyon (Natpol50) 🦊
 
 
 ## License
-This project is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0) - see the LICENSE file for details.
-This means you are free to:
+**This project is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)** - see the `LICENSE` file for details.
 
-Share: Copy and redistribute the material in any medium or format
-Adapt: Remix, transform, and build upon the material for any purpose, even commercially
+This means you are free to:
+* Share: Copy and redistribute the material in any medium or format
+* Adapt: Remix, transform, and build upon the material for any purpose, even commercially
 
 Under these terms:
 
-Attribution: You must give appropriate credit, provide a link to the license, and indicate if changes were made
-ShareAlike: If you modify the material, you must distribute your contributions under the same license as the original
+* Attribution: You must give appropriate credit, provide a link to the license, and indicate if changes were made
+* ShareAlike: If you modify the material, you must distribute your contributions under the same license as the original
