@@ -925,6 +925,30 @@ async def trsend(interaction: discord.Interaction,text_received: str,translate_l
             await wh.delete()
             break  # Exit the loop once the specific webhook is deleted
 
+@bot.tree.command(name='AThelp', description='Show available commands and usage tips')
+async def help_command(interaction: discord.Interaction) -> None:
+    """
+    Sends a short help message only to the requesting user.
+
+    Args:
+    - interaction (discord.Interaction): The interaction object from the command.
+
+    Returns:
+    - None
+    """
+    if interaction.user.bot:
+        return
+
+    message = (
+        "AT-bot help (slash commands)\n"
+        "- /trsend: Send a translated message as you.\n"
+        "  Required: message, langage (target language).\n"
+        "- /version: Show the bot version and GitHub links.\n"
+        "\n"
+        "Tip: You can also react with a flag emoji on a message to get a translation in DMs."
+    )
+    await interaction.response.send_message(message, ephemeral=True)
+
 @trsend.autocomplete("translate_langage")
 async def trsend_autocompletion( interaction: discord.Interaction, tmp_typing: str ) -> typing.List[discord.app_commands.Choice[str]]:
     """
