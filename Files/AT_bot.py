@@ -925,7 +925,7 @@ async def trsend(interaction: discord.Interaction,text_received: str,translate_l
             await wh.delete()
             break  # Exit the loop once the specific webhook is deleted
 
-@bot.tree.command(name='AThelp', description='Show available commands and usage tips')
+@bot.tree.command(name='athelp', description='Show available commands and usage tips')
 async def help_command(interaction: discord.Interaction) -> None:
     """
     Sends a short help message only to the requesting user.
