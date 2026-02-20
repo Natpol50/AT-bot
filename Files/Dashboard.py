@@ -1,7 +1,18 @@
-#!/usr/bin/env python3
-"""Textual-based TUI dashboard for ATbot."""
-
+# -----------------------------------------------------------------------------
+#  Dashboard.py
+#  Copyright (c) 2026 Asha the Fox 🦊
+#  All rights reserved.
+#
+#  This is the dashboard code for the ATbot project. 
+#  Dashboard - Displays real-time monitoring and statistics for the AT-bot project.
+#  Tracks translation metrics, API usage, server status, and system resources.
+#
+# -----------------------------------------------------------------------------
 from __future__ import annotations
+
+__author__ = "Asha Geyon (Natpol50)"
+__version__ = 1.0
+__last_revision__ = '2026-02-20'
 
 import json
 import os

@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------
 #  AT_bot.py
-#  Copyright (c) 2024 Asha the Fox 🦊
+#  Copyright (c) 2026 Asha the Fox 🦊
 #  All rights reserved.
 #
 #  This is the main code for the ATbot project. 
@@ -14,8 +14,9 @@
 # -----------------------------------------------------------------------------
 
 __author__ = "Asha Geyon (Natpol50)"
-__version__ = 1.2
-__last_revision__ = '2024-11-07'
+__version__ = 1.5
+__last_revision__ = '2026-02-20'
+
 UPDATE_NOTICE = None
 Dashboard_state = None
 Dashboard_started = False
@@ -849,6 +850,31 @@ def gd_translator(text_to_translate: str, translate_language: str) -> tuple[str,
     return Translated_text, Translator_name
 
         
+
+@bot.tree.command(name='version', description='Show the bot version and repository link')
+async def version(interaction: discord.Interaction) -> None:
+    """
+    Sends the bot version info only to the requesting user.
+
+    Args:
+    - interaction (discord.Interaction): The interaction object from the command.
+
+    Returns:
+    - None
+    """
+    if interaction.user.bot:
+        return
+
+    repo_url = "https://github.com/Natpol50/AT-bot"
+    releases_url = f"{repo_url}/releases"
+    message = (
+        f"AT-bot version v{__version__} ({__last_revision__})\n"
+        f"GitHub: {repo_url}\n"
+        f"Releases: {releases_url}"
+    )
+    await interaction.response.send_message(message, ephemeral=True)
+
+
 
 @bot.tree.command(name='trsend', description='Send a translated message with the bot')
 @discord.app_commands.describe(text_received="The message you want to send using the bot.",translate_langage="The language you want your message to be in.")

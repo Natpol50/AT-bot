@@ -7,9 +7,77 @@ echo
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   echo "Usage: ./StartBot.sh [OPTIONS]"
   echo "  --help        Show this help message"
+  echo "  --version     Show version info for all source files"
   echo "  --update      Check GitHub Releases and update"
   echo "  --release     Run the latest release if present"
   echo "  --config=NAME Use bot config NAME (skip picker)"
+  exit 0
+fi
+
+if [[ "${1:-}" == "--version" || "${1:-}" == "-v" ]]; then
+  if [[ $# -gt 1 ]]; then
+    echo "--version cannot be combined with other arguments."
+    exit 1
+  fi
+
+  echo -e "\033[32m
+ █████╗ ████████╗      ██████╗  ██████╗ ████████╗
+██╔══██╗╚══██╔══╝      ██╔══██╗██╔═══██╗╚══██╔══╝
+███████║   ██║  █████╗ ██████╔╝██║   ██║   ██║   
+██╔══██║   ██║  ╚════╝ ██╔══██╗██║ 🦊██║   ██║   
+██║  ██║   ██║         ██████╔╝╚██████╔╝   ██║   
+╚═╝  ╚═╝   ╚═╝         ╚═════╝  ╚═════╝    ╚═╝  
+\033[0m"
+
+  python3 - <<'PY'
+import ast
+from pathlib import Path
+
+FILES = [
+    ("AT_bot.py",               "Files/AT_bot.py"),
+    ("Dashboard.py",            "Files/Dashboard.py"),
+    ("Tokenverif.py",           "Files/Tokenverif.py"),
+    ("Lists.py",                "Files/Lists.py"),
+    ("Displays.py",             "Files/Displays.py"),
+    ("Dependency_installer.py", "Files/Dependency_installer.py"),
+]
+
+def extract(path):
+    info = {"__version__": "?", "__last_revision__": "?", "__author__": "?"}
+    try:
+        tree = ast.parse(Path(path).read_text())
+        for node in tree.body:
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name) and target.id in info:
+                        try:
+                            info[target.id] = str(ast.literal_eval(node.value))
+                        except Exception:
+                            pass
+    except Exception:
+        pass
+    return info
+
+W = 26
+DIV = "\033[90m" + "─" * 74 + "\033[0m"
+print(DIV)
+print(f"  \033[1m{'File':<{W}}  {'Version':<10}  {'Last revision':<14}  Author\033[0m")
+print(DIV)
+for label, path in FILES:
+    i = extract(path)
+    if Path(path).exists():
+        print(
+            f"  \033[0m{label:<{W}}  \033[34m{i['__version__']:<10}\033[0m"
+            f"  {i['__last_revision__']:<14}  {i['__author__']}"
+        )
+    else:
+        print(f"  \033[90m{label:<{W}}  {'?':<10}  {'?':<14}  (file not found)\033[0m")
+print(DIV)
+print()
+print("  Developed by \033[34mAsha the fox 🦊\033[0m")
+print()
+PY
+
   exit 0
 fi
 

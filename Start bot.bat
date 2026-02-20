@@ -1,4 +1,7 @@
 @echo off
+setlocal enabledelayedexpansion
+REM Support UTF-8 for the fox and banner characters
+chcp 65001 >nul
 title ATbot Launcher
 echo Starting ATbot...
 echo.
@@ -28,28 +31,20 @@ if "%1"=="--update" (
 )
 
 REM Prefer updated install if present
-set "DEV_ENTRY=Files\\AT_bot.py"
-set "REL_ENTRY=current\\Files\\AT_bot.py"
+set "DEV_ENTRY=Files/AT_bot.py"
+set "REL_ENTRY=current/Files/AT_bot.py"
 set "BOT_ENTRY="
 
 if "%1"=="--release" if exist "%REL_ENTRY%" set "BOT_ENTRY=%REL_ENTRY%"
 if not defined BOT_ENTRY if exist "%DEV_ENTRY%" if exist "%REL_ENTRY%" (
-    for /f "delims=" %%P in ('python -c "import ast,re,sys;from pathlib import Path;\
-def parse_version(path):\
-    try:\
-        tree=ast.parse(Path(path).read_text());\
-        for node in tree.body:\
-            if isinstance(node,ast.Assign):\
-                for target in node.targets:\
-                    if isinstance(target,ast.Name) and target.id=='__version__':\
-                        value=ast.literal_eval(node.value);\
-                        parts=re.findall(r'\\d+',str(value));\
-                        return tuple(int(p) for p in parts) if parts else (0,);\
-    except Exception:\
-        return (0,);\
-    return (0,)\
-dev='Files/AT_bot.py'; rel='current/Files/AT_bot.py';\
-print(dev if parse_version(dev) >= parse_version(rel) else rel)"') do set "BOT_ENTRY=%%P"
+    for /f "delims=" %%P in ('python -c "import ast,re,sys;from pathlib import Path;def parse_v(p): \
+try: \
+  t=ast.parse(Path(p).read_text(encoding='utf-8')); \
+  for n in [n for n in t.body if isinstance(n,ast.Assign)]: \
+    for t_node in n.targets: \
+      if isinstance(t_node,ast.Name) and t_node.id == '__version__': \
+        v=ast.literal_eval(n.value); prts=re.findall(r'\d+',str(v)); return tuple(int(px) for px in prts) if prts else (0,) \
+except Exception: pass\nreturn (0,)\nd=''Files/AT_bot.py''; r=''current/Files/AT_bot.py''; print(d if parse_v(d) >= parse_v(r) else r)"') do set "BOT_ENTRY=%%P"
 ) else (
     if exist "%DEV_ENTRY%" set "BOT_ENTRY=%DEV_ENTRY%"
     if not defined BOT_ENTRY if exist "%REL_ENTRY%" set "BOT_ENTRY=%REL_ENTRY%"
