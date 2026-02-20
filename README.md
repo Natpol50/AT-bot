@@ -29,7 +29,7 @@ Before installing ATbot, make sure you have:
 ## Installation (Windows & Unix-like systems)
 
 * **Download:** Grab the [latest release](https://github.com/Natpol50/AT-bot/releases).
-* **Launch:** Run Start `bot.bat`(windows) or `start_bot.sh` depending on your system
+* **Launch:** Run `Start bot.bat`(windows) or `StartBot.sh` depending on your system
 * **Setup Wizard:** Follow the terminal prompts to:
   * Name your configuration.
   * Link your Discord Token.
