@@ -1,28 +1,21 @@
-# ATbot - Discord Auto Translation Bot 🦊
+# ATbot - Discord Real-Time Translator 🦊
 
-Asha's Translation bot (or auto if you don't want my name here) is a Discord bot that provides real-time message translation capabilities using both DeepL and Google Translate APIs. It allows users to easily translate messages by either using commands or reacting with country flag emojis.
+AT-bot (Asha's Translation Bot) is a Discord bot auto-hosting solution that provides real-time message translation capabilities using both DeepL and Google Translate APIs. Contrary to other 'black box' bots, i here focus on transparency and userdata control.
 
+## Architecture & Logic
+
+The bot uses a hybrid translation system to ensure maximum reliability:
+
+* **DeepL Priority:** Leverages the DeepL API for superior contextual accuracy.
+* **Google Translate Fallback:** If DeepL limits are reached or unconfigured, the bot automatically switches to Google Translate to maintain service continuity.
+* **Multi-Config Engine:** Manage multiple bot instances or profiles directly through the built-in TUI at startup. (using Curses and Textuals)
 
 ## Features
 
-- Free
-- Easily hostable on your machine
-- Translation using the `/trsend` slash command
-- Translation by reacting with country flag emojis
-- Supports multiple bot configurations
-- Uses DeepL API for higher quality translations when available
-- Falls back to Google Translate if needed
-- Built-in language autocompletion
-
-
-## Coming soon
-
-- More translations APIs
-- A GUI
-- Code overhaul someday
-- Macos and Linux support
-- Please, request features, i've ran out of ideas
-
+* **Reaction-Based Translation:** React with a flag emoji (e.g., 🇫🇷, 🇺🇸, 🇯🇵) to receive an instant translation via DM.
+* **Slash Command /trsend:** Send translated messages directly into a channel with full language autocompletion.
+* **[HOST] Integrated TUI (Terminal User Interface):** An interactive setup wizard for first-time launches (no manual .env or .json editing required).
+* **[HOST] Advanced Logging:** Comprehensive traceability for debugging and monitoring API calls.
 
 ## Prerequisites
 
@@ -33,52 +26,24 @@ Before installing ATbot, make sure you have:
 - A Discord bot token ([How to get one](https://www.writebots.com/discord-bot-token/))
 - A DeepL API key ([How to get one](https://support.deepl.com/hc/en-us/articles/360020695820-Authentication-Key))
 
-## Installation
+## Installation (Windows & Unix-like systems)
 
-1. Download the latest release from [GitHub Releases](https://github.com/Natpol50/AT-bot/releases)
-2. Extract the ZIP file to your desired location
-3. Double-click `Start bot.bat` to launch the bot
-   - On first run, the script should install required dependencies, if error occurs. Please delete Firstboot.flag and restart the bot.
-   - Follow the setup wizard to configure your bot token and DeepL API key
+* **Download:** Grab the [latest release](https://github.com/Natpol50/AT-bot/releases).
+* **Launch:** Run Start `bot.bat`(windows) or `start_bot.sh` depending on your system
+* **Setup Wizard:** Follow the terminal prompts to:
+        Name your configuration.
+        Link your Discord Token.
+        Add your DeepL API key (optional but recommended).
+* **Technical Note:** On the first run, the script verifies the environment and installs necessary dependencies. If the process hangs, delete the Firstboot.flag file and restart.
 
-## Configuration
+## Roadmap & Future Evolutions
+- [ ] **Webhook Mirroring:** Linking two channels for automatic bi-directional translation using Webhooks.
+- [ ] **Translation Cache:** Implementing a SQLite database to cache frequent translations and save API quotas.
+- [ ] **Cross-Platform Support:** Official Linux port (Dockerization planned).
+- [ ] **Context Menu Integration:** Adding a "Translate" option via the Discord right-click menu (Apps).
 
-When you first run the bot, you'll need to:
 
-1. Choose "New bot/config" when prompted
-2. Enter a name for your configuration
-3. Input your Discord bot token
-4. Input your DeepL API key
-
-The bot will verify both keys and save your configuration for future use.
-
-## Usage
-
-### Slash Command Translation
-Use the `/trsend` command with the following parameters:
-- `message`: The text you want to translate
-- `language`: The target language (with autocompletion support)
-
-Example:
-```
-/trsend message:Asha is an happy fox language:French
-```
-
-### Flag Reaction Translation
-1. React to any message with a country flag emoji
-2. The bot will send you a DM containing:
-   - The original message
-   - The translation
-   - The translator used (DeepL or Google Translate)
-
-## Multiple Bot Configurations
-
-You can set up multiple bot configurations by:
-1. Running `start_bot.bat`
-2. Selecting "New bot/config"
-3. Following the setup process for each new configuration
-
-## Troubleshooting
+## Basic troubleshooting
 
 If you encounter issues:
 
@@ -93,13 +58,18 @@ The bot automatically creates log files in the `logs` folder with timestamps. Th
 
 ## Support
 
-If you encounter any problems:
+If you encounter any problems and chacked the Basic troubleshooting:
 1. Check the [GitHub Issues](https://github.com/Natpol50/AT-bot/issues) page
 2. Create a new issue with detailed information about your problem
 
+If you have an idea not yet in the roadmap or find a bug:
+1. Check existing Issues.
+2. Open a new Issue with detailed information about your proposal.
+
+
 ## Credits
 
-Created by Asha Geyon (Natpol50) 🦊
+Created and maintained by Asha Geyon (Natpol50) 🦊
 
 
 ## License
