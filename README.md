@@ -59,12 +59,12 @@ The bot automatically creates log files in the `logs` folder with timestamps. Th
 
 ## Support
 
-If you encounter any problems and chacked the Basic troubleshooting:
+If you encounter any problems and checked the Basic troubleshooting:
 1. Check the [GitHub Issues](https://github.com/Natpol50/AT-bot/issues) page
 2. Create a new issue with detailed information about your problem
 
 If you have an idea not yet in the roadmap or find a bug:
-1. Check existing Issues.
+1. Check [GitHub Issues](https://github.com/Natpol50/AT-bot/issues).
 2. Open a new Issue with detailed information about your proposal.
 
 
