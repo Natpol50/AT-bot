@@ -74,7 +74,8 @@ Created and maintained by Asha Geyon (Natpol50) 🦊
 
 
 ## License
-**This project is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)** - see the `LICENSE` file for details.
+**This project is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)** 
+see the `LICENSE` file for details.
 
 This means you are free to:
 * Share: Copy and redistribute the material in any medium or format
