@@ -22,7 +22,7 @@ The bot uses a hybrid translation system to ensure maximum reliability:
 Before installing ATbot, make sure you have:
 
 - Windows operating system
-- Python 3.8 or higher installed (Tested on Python 3.10.11)
+- Python 3.8 or higher installed (Tested on Python 3.10.11 & 3.9.25)
 - A Discord bot token ([How to get one](https://www.writebots.com/discord-bot-token/))
 - A DeepL API key ([How to get one](https://support.deepl.com/hc/en-us/articles/360020695820-Authentication-Key))
 
