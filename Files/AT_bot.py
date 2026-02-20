@@ -14,8 +14,11 @@
 # -----------------------------------------------------------------------------
 
 __author__ = "Asha Geyon (Natpol50)"
-__version__ = 1.1
+__version__ = 1.2
 __last_revision__ = '2024-11-07'
+UPDATE_NOTICE = None
+Dashboard_state = None
+Dashboard_started = False
 
 
 if __name__ != "__main__":
@@ -24,6 +27,20 @@ if __name__ != "__main__":
 import os
 import subprocess
 import logging
+
+
+def clear_console() -> None:
+    if os.name == "nt":
+        os.system("cls")
+    else:
+        os.system("clear")
+
+
+def set_title(title: str) -> None:
+    if os.name == "nt":
+        os.system(f"title {title}")
+    else:
+        print(f"\33]0;{title}\a", end="", flush=True)
 
 
 
@@ -109,7 +126,8 @@ def bootup_function() -> bool:
             'windows-curses==2.4.0',
             'Pillow==11.0.0',
             'deepl==1.19.1',
-            'requests==2.32.3'
+            'requests==2.32.3',
+            'textual==0.76.0'
         ]
 
         Total_size = 0
@@ -169,23 +187,39 @@ def bootup_function() -> bool:
 
 
 
-def check_for_update():
-    VERSION_URL = 'https://asha-services.org/s/8LM99TbsQQAZrB3/download/Latest.txt'  # Remote version file hosted on main developper nextcloud instance
+def check_for_update() -> None:
+    global UPDATE_NOTICE
+
+    def parse_version(value: str) -> tuple:
+        import re
+
+        parts = re.findall(r"\d+", value)
+        if not parts:
+            return (0,)
+        return tuple(int(p) for p in parts)
+
+    VERSION_URL = "https://api.github.com/repos/Natpol50/AT-bot/releases/latest"
     try:
-        response = requests.get(VERSION_URL)
-        response.raise_for_status()  # Just in case of any error
-        remote_version = response.text.strip()
-        
-        if float(remote_version) > float(__version__):
-            os.system("title ATbot - New version available")
-            print(f"A new version is available : v{remote_version} ! ( current is v{__version__} )")
-            print("Please, download the last version from https://github.com/Natpol50/AT-bot/releases")
-            input("Press enter to continue...")
+        response = requests.get(
+            VERSION_URL,
+            headers={"Accept": "application/vnd.github+json", "User-Agent": "ATbot"},
+            timeout=10,
+        )
+        response.raise_for_status()
+        data = response.json()
+        remote_tag = data.get("tag_name") or data.get("name") or ""
+        remote_version = parse_version(remote_tag)
+        local_version = parse_version(str(__version__))
 
-
+        if remote_version > local_version:
+            UPDATE_NOTICE = (
+                f"A new version is available: {remote_tag} (current v{__version__}). "
+                "Download from https://github.com/Natpol50/AT-bot/releases"
+            )
+            logging.warning(UPDATE_NOTICE)
     except requests.RequestException as e:
-        print(f"There was and error while checking for new versions : {e}")
-        logging.warning(f"There was and error while checking for new versions : {e}")
+        print(f"There was an error while checking for new versions: {e}")
+        logging.warning(f"There was an error while checking for new versions: {e}")
 
 
 """
@@ -226,6 +260,7 @@ if bootup_function():
     import datetime
     import Displays
     import requests
+    import Dashboard
 else:
     print("Initialization failed!")
     logging.critical("Initialization failed !")
@@ -321,21 +356,21 @@ def setup_environment() -> None:
 
     # First, we welcome the user.
     Displays.Welcome()
-    os.system('cls')  # Clear the screen
+    clear_console()  # Clear the screen
     
     # And then, ask the user which configuration he wanna use.
-    os.system("title ATbot - Config Picker")
+    set_title("ATbot - Config Picker")
     Config.read(Config_file)
     Bot_list = Config.sections()
     Bot_list.append('New bot/config')  # Adds a 'New bot/config' option, for multiple profiles.
     Selected_bot = bot_picker(Bot_list)
     print(" ")
 
-    os.system('cls')
+    clear_console()
 
     if Selected_bot == 'New bot/config':
         # Handle new bot creation
-        os.system("title ATbot - New Bot/config")
+        set_title("ATbot - New Bot/config")
         Selected_bot = input("Choose a name for the new bot/config: ")
 
         # First, we get and verify the discord bot API key.
@@ -397,7 +432,7 @@ def bot_bootup(selected_bot, config_file, config) -> None:
     Startup_time = datetime.datetime.now()
 
     # Set the console window title
-    os.system(f"title Bot : {selected_bot} , Starting...")
+    set_title(f"Bot : {selected_bot} , Starting...")
 
     # Print and log the configuration file path
     print(f'\nConfig file is {config_file}\n')
@@ -462,6 +497,7 @@ del check_for_update
 config_init()
 setup_environment()
 bot_bootup(Selected_bot,Config_file,Config)
+Dashboard_state = Dashboard.DashboardState()
 del bot_picker
 del config_init
 del setup_environment
@@ -599,7 +635,7 @@ async def status() -> None:
     # Log the uptime and update the console title
     Uptime_str = format_uptime(Uptime)
     logging.info(f"The bot has been running for {Uptime_str}.")
-    os.system(f"title Bot : {Selected_bot} , Uptime : {Uptime_str}.")
+    set_title(f"Bot : {Selected_bot} , Uptime : {Uptime_str}.")
 
            
 
@@ -618,7 +654,7 @@ async def on_ready() -> None:
     - None
     """
     # Clear the command line interface
-    os.system('cls')
+    clear_console()
 
     # Print bot connection details
     Bot_info = f"Connected as {bot.user.name} (ID: {bot.user.id})"
@@ -650,9 +686,32 @@ async def on_ready() -> None:
 
         print(" ")
 
+    if UPDATE_NOTICE:
+        print(UPDATE_NOTICE)
+        logging.warning(UPDATE_NOTICE)
+
+    global Dashboard_started
+    if not Dashboard_started:
+        Dashboard_state.set_servers([Guild.name for Guild in bot.guilds])
+        Dashboard_state.set_update_notice(UPDATE_NOTICE)
+        Dashboard.start_dashboard(Dashboard_state)
+        Dashboard_started = True
+
     # Start the status update loop and synchronize the bot's tree (Slash commands)
     status.start()
     await bot.tree.sync()
+
+
+@bot.event
+async def on_guild_join(guild: discord.Guild) -> None:
+    if Dashboard_state:
+        Dashboard_state.set_servers([g.name for g in bot.guilds])
+
+
+@bot.event
+async def on_guild_remove(guild: discord.Guild) -> None:
+    if Dashboard_state:
+        Dashboard_state.set_servers([g.name for g in bot.guilds])
         
 
 
@@ -690,9 +749,13 @@ def detect_language(text: str) -> str:
     try:
         result = Deepl_translator.translate_text(text, target_lang="EN-GB")
         detected_language = result.detected_source_lang
+        if Dashboard_state:
+            Dashboard_state.record_api_call("deepl", ok=True)
         return detected_language
     except Exception as e:
         logging.error(f"An error occurred while detecting the language: {e}")
+        if Dashboard_state:
+            Dashboard_state.record_api_call("deepl", ok=False)
         return False
     
     
@@ -726,11 +789,15 @@ def gd_translator(text_to_translate: str, translate_language: str) -> tuple[str,
                 text_to_translate, 
                 target_lang=deepl_name_to_acronym[translate_language]
             )
+            if Dashboard_state:
+                Dashboard_state.record_api_call("deepl", ok=True)
             Translator_name = "dpl"
             logging.info("Translation with DeepL successful.")
 
         except Exception as e:
             logging.error(f"Unexpected error during DeepL translation: {e}")
+            if Dashboard_state:
+                Dashboard_state.record_api_call("deepl", ok=False)
 
             # Fallback to Google Translate (GT)
             logging.info("Switching to Google Translate due to DeepL error.")
@@ -739,12 +806,16 @@ def gd_translator(text_to_translate: str, translate_language: str) -> tuple[str,
                     text_to_translate, 
                     dest=google_name_to_acronym[translate_language]
                 ).text
+                if Dashboard_state:
+                    Dashboard_state.record_api_call("google", ok=True)
                 Translator_name = "gt"
                 logging.info("Translation with Google Translate successful after DeepL failure.")
 
             except Exception as e:
                 logging.critical(f"Error using Google Translate after DeepL failure: {e}")
                 logging.critical(f"Failed to translate message '{text_to_translate}' to '{translate_language}'.")
+                if Dashboard_state:
+                    Dashboard_state.record_api_call("google", ok=False)
                 Translated_text = "An error occurred. The bot could not complete the translation. Please contact support."
                 Translator_name = "ERROR"
 
@@ -757,12 +828,16 @@ def gd_translator(text_to_translate: str, translate_language: str) -> tuple[str,
                 text_to_translate, 
                 dest=google_name_to_acronym[translate_language]
             ).text
+            if Dashboard_state:
+                Dashboard_state.record_api_call("google", ok=True)
             Translator_name = "gt"
             logging.info("Translation with Google Translate successful.")
 
         except Exception as e:
             logging.critical(f"Error using Google Translate: {e}")
             logging.critical(f"Failed to translate message '{text_to_translate}' to '{translate_language}'.")
+            if Dashboard_state:
+                Dashboard_state.record_api_call("google", ok=False)
             Translated_text = "An error occurred; the bot could not complete the translation. Please contact bot owner or support."
             Translator_name = "ERROR"
 
@@ -771,6 +846,9 @@ def gd_translator(text_to_translate: str, translate_language: str) -> tuple[str,
         logging.error(f"Unsupported language '{translate_language}' for both DeepL and Google Translate.")
         Translated_text = f"Error: '{translate_language}' is not supported by the current translation services used by this bot."
         Translator_name = "ERROR"
+
+    if Dashboard_state:
+        Dashboard_state.record_translation(Translator_name, Translator_name != "ERROR")
 
     return Translated_text, Translator_name
 
