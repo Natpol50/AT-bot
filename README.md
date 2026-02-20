@@ -31,9 +31,10 @@ Before installing ATbot, make sure you have:
 * **Download:** Grab the [latest release](https://github.com/Natpol50/AT-bot/releases).
 * **Launch:** Run Start `bot.bat`(windows) or `start_bot.sh` depending on your system
 * **Setup Wizard:** Follow the terminal prompts to:
-        - Name your configuration.
-        - Link your Discord Token.
-        - Add your DeepL API key (optional but recommended).
+  * Name your configuration.
+  * Link your Discord Token.
+  * Add your DeepL API key (optional but recommended).
+
 * **Technical Note:** On the first run, the script verifies the environment and installs necessary dependencies. If the process hangs, delete the Firstboot.flag file and restart.
 
 ## Roadmap & Future Evolutions
