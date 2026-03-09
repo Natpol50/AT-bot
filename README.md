@@ -40,7 +40,7 @@ Before installing ATbot, make sure you have:
 ## Roadmap & Future Evolutions
 - [ ] **Webhook Mirroring:** Linking two channels for automatic bi-directional translation using Webhooks.
 - [ ] **Translation Cache:** Implementing a SQLite database to cache frequent translations and save API quotas.
-- [ ] **Cross-Platform Support:** Official Linux port (Dockerization planned).
+- [x] **Cross-Platform Support:** Official Linux port (Dockerization planned someday).
 - [ ] **Context Menu Integration:** Adding a "Translate" option via the Discord right-click menu (Apps).
 
 
