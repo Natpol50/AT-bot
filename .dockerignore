@@ -1,0 +1,42 @@
+# Git and version control
+.git/
+.gitignore
+.github/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.pytest_cache/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Bot specific
+Firstboot.flag
+versions/
+current
+.updater_state.json
+dashboard_state.json
+config.ini
+
+# CI
+.github/

@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  atbot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: atbot
+    restart: unless-stopped
+    
+    environment:
+      # Required: Discord bot token
+      DISCORD_TOKEN: ${DISCORD_TOKEN:-}
+      # Required: DeepL API key
+      DEEPL_API_KEY: ${DEEPL_API_KEY:-}
+      # Optional: bot config name to use
+      ATBOT_CONFIG: ${ATBOT_CONFIG:-default}
+      # Optional: skip token verification for faster startup
+      ATBOT_SKIP_VERIFY: ${ATBOT_SKIP_VERIFY:-0}
+    
+    volumes:
+      # Persist configuration and logs
+      - ./bot_config:/app/Files/config
+      - ./bot_logs:/app/Files/logs
+      - ./bot_state:/app/Files/state
+    
+    # Optional: expose if bot has any web interface (currently not used)
+    # ports:
+    #   - "8000:8000"
+    
+    # Resource limits (optional, adjust as needed)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Healthcheck
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; exit(0 if os.path.exists('/app/Files/AT_bot.py') else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Optional logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

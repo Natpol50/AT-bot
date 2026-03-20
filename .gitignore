@@ -8,3 +8,4 @@ logs/*
 __pycache__/*
 .updater_state.json
 dashboard_state.json
+venv/*

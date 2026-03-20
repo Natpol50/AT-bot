@@ -13,7 +13,7 @@
 
 __author__ = "Asha Geyon (Natpol50)"
 __version__ = 1.1
-__all__ = ['get_package_size', 'install_packages']
+__all__ = ['get_package_size', 'install_packages', 'install_requirements', 'get_missing_requirements']
 __last_revision__ = '2024-11-09'
 
 
@@ -25,6 +25,7 @@ import urllib.request
 import importlib.util
 import sys
 import platform
+import re
 
 Trans_dic = {
     # A dictionary that maps package names to their corresponding import names.
@@ -64,8 +65,8 @@ def get_package_size(package_name: str) -> float:
     Returns:
     - float: Size of the package in MB, or -1 if an error occurred, 0 if already installed.
     """
-    # Removes the package version constraint
-    Base_package_name = package_name.split('==')[0]
+    # Removes version/operator constraints
+    Base_package_name = re.split(r'[<>=!~]', package_name, maxsplit=1)[0].strip()
    
     # Special handling for windows-curses
     if Base_package_name == 'windows-curses':
@@ -127,6 +128,111 @@ def install_packages(pkg_list: list) -> None:
             print(f"Error installing: {Pkg}\nPlease verify if all prerequisites are met. Refer to the wiki for details.")
             logging.critical(f"Error installing '{Pkg}': {e}")
             input('Press Enter to continue...')
+
+
+def install_requirements(requirements_file: str) -> bool:
+    """
+    Install dependencies from a requirements file using pip.
+
+    Args:
+    - requirements_file (str): Path to the requirements file.
+
+    Returns:
+    - bool: True if installation succeeded, False otherwise.
+    """
+    if not os.path.exists(requirements_file):
+        logging.critical(f"Requirements file not found: {requirements_file}")
+        print(f"Requirements file not found: {requirements_file}")
+        return False
+
+    try:
+        subprocess.check_call(['pip', 'install', '-r', requirements_file])
+        logging.info(f"Successfully installed dependencies from: {requirements_file}")
+        print(f"Successfully installed dependencies from: {requirements_file}")
+        return True
+    except subprocess.CalledProcessError as e:
+        logging.critical(f"Error installing dependencies from '{requirements_file}': {e}")
+        print("Error installing dependencies from requirements file.")
+        return False
+
+
+def _requirement_applies_to_current_platform(line: str) -> bool:
+    """
+    Best-effort marker support for requirements lines using platform_system.
+    """
+    if ';' not in line:
+        return True
+
+    marker = line.split(';', 1)[1].strip().lower()
+    system_name = platform.system().lower()
+
+    if "platform_system" not in marker:
+        return True
+
+    if "==" in marker:
+        target = marker.split("==", 1)[1].strip().strip("\"'")
+        return system_name == target.lower()
+    if "!=" in marker:
+        target = marker.split("!=", 1)[1].strip().strip("\"'")
+        return system_name != target.lower()
+
+    return True
+
+
+def _parse_requirements_file(requirements_file: str) -> list[str]:
+    """
+    Parse a requirements file and return applicable requirement entries.
+    """
+    Parsed_requirements: list[str] = []
+
+    with open(requirements_file, 'r', encoding='utf-8') as req_file:
+        for Raw_line in req_file:
+            Line = Raw_line.strip()
+            if not Line or Line.startswith('#'):
+                continue
+            if Line.startswith('-r') or Line.startswith('--requirement'):
+                continue
+
+            # Remove inline comments
+            if ' #' in Line:
+                Line = Line.split(' #', 1)[0].strip()
+
+            if not _requirement_applies_to_current_platform(Line):
+                continue
+
+            Requirement_entry = Line.split(';', 1)[0].strip()
+            if Requirement_entry:
+                Parsed_requirements.append(Requirement_entry)
+
+    return Parsed_requirements
+
+
+def get_missing_requirements(requirements_file: str) -> tuple[list[str], float, list[str]]:
+    """
+    Return missing dependencies from a requirements file.
+
+    Returns:
+    - missing_requirements (list[str]): Requirements that appear missing.
+    - total_size_mb (float): Estimated total download size in MB for missing requirements.
+    - unresolved_requirements (list[str]): Requirements for which size/state could not be resolved.
+    """
+    Missing_requirements: list[str] = []
+    Unresolved_requirements: list[str] = []
+    Total_size_mb = 0.0
+
+    if not os.path.exists(requirements_file):
+        logging.warning(f"Requirements file not found while scanning missing deps: {requirements_file}")
+        return Missing_requirements, Total_size_mb, Unresolved_requirements
+
+    for Requirement in _parse_requirements_file(requirements_file):
+        Dep_size = get_package_size(Requirement)
+        if Dep_size > 0:
+            Missing_requirements.append(Requirement)
+            Total_size_mb += Dep_size
+        elif Dep_size == -1:
+            Unresolved_requirements.append(Requirement)
+
+    return Missing_requirements, Total_size_mb, Unresolved_requirements
 
 if __name__ == "__main__":
     print("This is a library module and is not intended to be run directly, please use AT_bot.py .")

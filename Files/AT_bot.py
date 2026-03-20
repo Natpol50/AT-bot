@@ -26,11 +26,32 @@ if __name__ != "__main__":
     print("This isn't a library module! What are you planning on doing?")
 
 import os
-import subprocess
 import logging
 import threading
 import concurrent.futures
 import sys
+
+
+DOCKER_FLAG = False
+FORCE_NEW_CONFIG = False
+CLI_CONFIG_NAME = None
+AUTO_APPROVE_DEP_INSTALL = False
+
+for Arg in sys.argv[1:]:
+    if Arg == "--docker":
+        DOCKER_FLAG = True
+    elif Arg == "--new-config":
+        FORCE_NEW_CONFIG = True
+    elif Arg in ["--yes-install", "--auto-approve-install"]:
+        AUTO_APPROVE_DEP_INSTALL = True
+    elif Arg.startswith("--config="):
+        CLI_CONFIG_NAME = Arg.split("=", 1)[1].strip()
+
+if os.getenv("ATBOT_DOCKER", "").lower() in ["1", "true", "yes", "on"]:
+    DOCKER_FLAG = True
+
+if os.getenv("ATBOT_YES_INSTALL", "").lower() in ["1", "true", "yes", "on"]:
+    AUTO_APPROVE_DEP_INSTALL = True
 
 
 def clear_console() -> None:
@@ -120,60 +141,53 @@ def bootup_function() -> bool:
             return False        
     
     Flag_file = "Firstboot.flag"  # Flag to indicate first-time setup
+    Requirements_file = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "requirements.txt")
+    )
+
+    if DOCKER_FLAG:
+        log_init()
+        logging.info("Docker mode enabled, skipping auto-install dependencies.")
+        return True
 
     if not os.path.exists(Flag_file):
         import Dependency_installer as install
 
-        Dependencies = [
-            'discord.py==2.4.0',
-            'googletrans==4.0.0-rc.1',
-            'windows-curses==2.4.0',
-            'Pillow==11.0.0',
-            'deepl==1.19.1',
-            'requests==2.32.3',
-            'textual==0.76.0',
-            'psutil==5.9.8'
-        ]
-
-        Total_size = 0
-        Dependencies_to_install = []
-
-        print("As this is the first time the script is running, Dependencies will be installed.")
-
-        # Attempt to install pathlib separately, as pathlib is needed for the logging to work. (refer to log_init() function)
-        try:
-            subprocess.check_call(['pip', 'install', 'pathlib==1.0.1'])
-        except subprocess.CalledProcessError as e:
-            print(f"There was an error installing pathlib: {e}.")
-            input("\nPress enter to open the bug report page [https://github.com/Natpol50/AT-bot/issues]")
-            subprocess.run(['powershell', '-Command', f"start-Process {'https://github.com/Natpol50/AT-bot/issues'}"])
-            input('Press enter to exit...')
-            exit()
+        print("As this is the first time the script is running, dependencies will be installed from requirements.txt.")
 
         log_init()
         del log_init
         logging.info("First-time setup, installing Dependencies")
 
-        # Determine the size of each dependency and prepare the installation list
-        for Dep in Dependencies:
-            Dep_size = install.get_package_size(Dep)
-            if Dep_size > 0:
-                Dependencies_to_install.append(Dep)
-            elif Dep_size == -1:
-                print(f"Error retrieving size for package {Dep}")
-            Total_size += Dep_size
+        Missing_dependencies, Total_size, Unresolved_dependencies = install.get_missing_requirements(Requirements_file)
 
-        # Install thoses dependencies (OR NOT)
-        if Dependencies_to_install:
+        if Missing_dependencies:
+            print("You need to install these dependencies:")
+            for Dep in Missing_dependencies:
+                print(f"- {Dep}")
+            print(f"Estimated total size: {Total_size:.2f} MB")
+        else:
+            print("No clearly missing dependencies were detected from requirements.txt.")
+
+        if Unresolved_dependencies:
+            print("Could not verify these dependencies (network/index issue possible):")
+            for Dep in Unresolved_dependencies:
+                print(f"- {Dep}")
+
+        if AUTO_APPROVE_DEP_INSTALL:
+            logging.info("Dependency installation auto-approved by CLI/env flag.")
+        else:
             Option = input(
-                f"You need to install these dependencies: {Dependencies_to_install}.\n"
-                f"The total size is approximately {Total_size:.2f} MB.\n"
+                f"Dependencies will be installed from: {Requirements_file}\n"
                 "Do you wish to proceed (Y/N)? "
             )
-            if Option.lower() not in ["y", "yes"]:
+            if Option.lower() not in ["y", "yes", "yup", "yeah", "yep", "of course", "why not", "go ahead", "sure"]:
                 exit()
 
-            install.install_packages(Dependencies_to_install)
+        if not install.install_requirements(Requirements_file):
+            print("Dependency installation failed.")
+            input("Press Enter to exit...")
+            exit()
             
         del install
         # Create the flag file to indicate setup has been completed
@@ -194,6 +208,10 @@ def bootup_function() -> bool:
 
 def check_for_update() -> None:
     global UPDATE_NOTICE
+
+    if DOCKER_FLAG:
+        logging.info("Docker mode enabled, skipping update check.")
+        return
 
     def parse_version(value: str) -> tuple:
         import re
@@ -216,10 +234,10 @@ def check_for_update() -> None:
         remote_version = parse_version(remote_tag)
         local_version = parse_version(str(__version__))
 
-        if remote_version > local_version:
+        if remote_version[:1] > local_version[:1]:
             UPDATE_NOTICE = (
-                f"A new version is available: {remote_tag} (current v{__version__}). "
-                "Download from https://github.com/Natpol50/AT-bot/releases"
+            f"A new version is available: {remote_tag} (current v{__version__}). "
+            "Download from https://github.com/Natpol50/AT-bot/releases"
             )
             logging.warning(UPDATE_NOTICE)
     except requests.RequestException as e:
@@ -343,7 +361,7 @@ def config_init() -> None:
         with open(Config_file, 'w') as file:
             file.write(" ")  # Create an empty config file
 
-def setup_environment() -> None:
+def setup_environment(force_new_config: bool = False) -> None:
     """
     Sets up the initial environment for the ATbot configuration.
     This includes creating a configuration file if it doesn't exist,
@@ -363,15 +381,18 @@ def setup_environment() -> None:
     Displays.Welcome()
     clear_console()  # Clear the screen
     
-    # And then, ask the user which configuration he wanna use.
-    set_title("ATbot - Config Picker")
-    Config.read(Config_file)
-    Bot_list = Config.sections()
-    Bot_list.append('New bot/config')  # Adds a 'New bot/config' option, for multiple profiles.
-    Selected_bot = bot_picker(Bot_list)
-    print(" ")
+    if force_new_config:
+        Selected_bot = 'New bot/config'
+    else:
+        # And then, ask the user which configuration he wanna use.
+        set_title("ATbot - Config Picker")
+        Config.read(Config_file)
+        Bot_list = Config.sections()
+        Bot_list.append('New bot/config')  # Adds a 'New bot/config' option, for multiple profiles.
+        Selected_bot = bot_picker(Bot_list)
+        print(" ")
 
-    clear_console()
+        clear_console()
 
     if Selected_bot == 'New bot/config':
         # Handle new bot creation
@@ -493,18 +514,21 @@ def bot_bootup(selected_bot, config_file, config) -> None:
 
 
 # First, we load everything to avoid any bot not defined error,
-bootup_function()
+# startup checks are already done above in the import bootstrap.
 del bootup_function
 # Second, we check for any update
 check_for_update()
 del check_for_update
 #Finally, we load the bot bootloader
 config_init()
+Config.read(Config_file)
 
 # Parse CLI arguments for auto-config selection
-if len(sys.argv) > 1 and sys.argv[1].startswith("--config="):
-    Selected_bot = sys.argv[1].split("=", 1)[1]
-    Config.read(Config_file)
+if FORCE_NEW_CONFIG:
+    logging.info("Using CLI flag to force creation of a new config.")
+    setup_environment(force_new_config=True)
+elif CLI_CONFIG_NAME:
+    Selected_bot = CLI_CONFIG_NAME
     if Selected_bot in Config.sections():
         logging.info(f"Using config from CLI: {Selected_bot}")
     else:
@@ -925,7 +949,7 @@ async def trsend(interaction: discord.Interaction,text_received: str,translate_l
             await wh.delete()
             break  # Exit the loop once the specific webhook is deleted
 
-@bot.tree.command(name='AThelp', description='Show available commands and usage tips')
+@bot.tree.command(name='athelp', description='Show available commands and usage tips')
 async def help_command(interaction: discord.Interaction) -> None:
     """
     Sends a short help message only to the requesting user.
