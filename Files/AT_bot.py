@@ -126,7 +126,6 @@ def bootup_function() -> bool:
 
         Dependencies = [
             'discord.py==2.4.0',
-            'audioop-lts', # We can all thank discord.py for that one, the bot is not capable of audio, but discord.py requires it, so here we are.
             'googletrans==4.0.0-rc.1',
             'windows-curses==2.4.0',
             'Pillow==11.0.0',
