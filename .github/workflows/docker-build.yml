@@ -53,15 +53,31 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Build image tags
+        id: tags
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          DOCKER_TAGS="ghcr.io/${REPO_LOWER}:latest"
+          
+          if [[ -n "${{ secrets.DOCKER_USERNAME }}" ]]; then
+            DOCKER_TAGS="${DOCKER_TAGS},${{ secrets.DOCKER_USERNAME }}/atbot:latest"
+          fi
+          
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG_NAME=${GITHUB_REF#refs/tags/}
+            DOCKER_TAGS="${DOCKER_TAGS},ghcr.io/${REPO_LOWER}:${TAG_NAME}"
+            if [[ -n "${{ secrets.DOCKER_USERNAME }}" ]]; then
+              DOCKER_TAGS="${DOCKER_TAGS},${{ secrets.DOCKER_USERNAME }}/atbot:${TAG_NAME}"
+            fi
+          fi
+          
+          echo "tags=${DOCKER_TAGS}" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker images
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/atbot:latest
-            ghcr.io/${{ github.repository }}:latest
-            ${{ needs.check-credentials.outputs.has-docker-creds == 'true' && format('{0}/atbot:{1}', secrets.DOCKER_USERNAME, github.ref_name) || '' }}
-            ${{ startsWith(github.ref, 'refs/tags/') && format('ghcr.io/{0}:{1}', github.repository, github.ref_name) || '' }}
+          tags: ${{ steps.tags.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
