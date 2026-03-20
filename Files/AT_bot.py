@@ -14,7 +14,7 @@
 # -----------------------------------------------------------------------------
 
 __author__ = "Asha Geyon (Natpol50)"
-__version__ = 1.5
+__version__ = 1.7
 __last_revision__ = '2026-02-20'
 
 UPDATE_NOTICE = None
