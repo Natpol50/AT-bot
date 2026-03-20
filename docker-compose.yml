@@ -19,10 +19,12 @@ services:
       ATBOT_SKIP_VERIFY: ${ATBOT_SKIP_VERIFY:-0}
     
     volumes:
-      # Persist configuration and logs
-      - ./bot_config:/app/Files/config
-      - ./bot_logs:/app/Files/logs
-      - ./bot_state:/app/Files/state
+      # Persist configuration file
+      - ./config.ini:/app/Files/config.ini
+      # Persist logs
+      - ./logs:/app/Files/logs
+      # Persist dashboard state (optional)
+      - ./dashboard_state.json:/app/Files/dashboard_state.json
     
     # Optional: expose if bot has any web interface (currently not used)
     # ports:
