@@ -14,8 +14,8 @@
 # -----------------------------------------------------------------------------
 
 __author__ = "Asha Geyon (Natpol50)"
-__version__ = 1.7
-__last_revision__ = '2026-02-20'
+__version__ = 1.8
+__last_revision__ = '2026-03-25'
 
 UPDATE_NOTICE = None
 Dashboard_state = None
@@ -431,12 +431,12 @@ def setup_environment(force_new_config: bool = False) -> None:
         with open(Config_file,"w") as File_object:
             Config.write(File_object)
 
-def bot_bootup(selected_bot, config_file, config) -> None:
+def bot_bootup(selected_bot, config_file, config, docker_mode=False, docker_tokens=None) -> None:
     """
     Initializes and starts up the bot by performing the following tasks:
     1. Sets the console title and prints the configuration file location.
     2. Checks the connectivity to Discord's website.
-    3. Retrieves API keys from the configuration file.
+    3. Retrieves API keys from the configuration file (or environment in Docker mode).
     4. Initializes Deepl and Google translators.
     5. Sets up the Discord bot with (what is think is) appropriate permissions and intents.
 
@@ -444,6 +444,8 @@ def bot_bootup(selected_bot, config_file, config) -> None:
     - selected_bot (str): The name of the bot to be started.
     - config_file (str): Path to the configuration file.
     - config (dict): Configuration dictionary containing API keys and other settings.
+    - docker_mode (bool): Whether running in Docker mode.
+    - docker_tokens (tuple): (discord_token, deepl_token) when in Docker mode.
 
     Returns:
     - None
@@ -461,41 +463,52 @@ def bot_bootup(selected_bot, config_file, config) -> None:
     set_title(f"Bot : {selected_bot} , Starting...")
 
     # Print and log the configuration file path
-    print(f'\nConfig file is {config_file}\n')
-    logging.info(f'\nConfig file is {config_file}\n')
+    if not docker_mode:
+        print(f'\nConfig file is {config_file}\n')
+        logging.info(f'\nConfig file is {config_file}\n')
+    else:
+        logging.info("Docker mode: reading config from environment variables")
 
-    # Test connectivity to Discord.com
-    try:
-        Response = requests.get("https://discord.com/", timeout=5)
-        print("The request to Discord.com was successful\n")
-    except Exception as e:
-        print("The request to Discord.com was unsuccessful")
-        logging.critical("Connection to discord.com was unsuccessful. The program will close.")
-        logging.critical(f"Error code: {e}")
-        print(f"Maybe bad internet? Error code: {e}")
-        input("Press Enter to exit...")
-        exit()
+    # Retrieve API keys
+    if docker_mode and docker_tokens:
+        Discord_api_key, Deepl_api_key = docker_tokens
+        logging.info("Using tokens from environment variables")
+    else:
+        # Test connectivity to Discord.com (skip in Docker for speed)
+        if not docker_mode:
+            try:
+                Response = requests.get("https://discord.com/", timeout=5)
+                print("The request to Discord.com was successful\n")
+            except Exception as e:
+                print("The request to Discord.com was unsuccessful")
+                logging.critical("Connection to discord.com was unsuccessful. The program will close.")
+                logging.critical(f"Error code: {e}")
+                print(f"Maybe bad internet? Error code: {e}")
+                input("Press Enter to exit...")
+                exit()
 
-    # Retrieve API keys from the configuration file
-    Discord_api_key = config.get(selected_bot, 'discord')
-    Deepl_api_key = config.get(selected_bot, 'deepl')
-    
+        # Retrieve API keys from the configuration file
+        Discord_api_key = config.get(selected_bot, 'discord')
+        Deepl_api_key = config.get(selected_bot, 'deepl')
 
-    # Test API keys
-    import Tokenverif
+    # Test API keys (skip in Docker mode for speed)
+    if not docker_mode:
+        import Tokenverif
 
-    if Tokenverif.DS_token(Discord_api_key) == False :
-        print("The discord api key seems invalid")
-        logging.critical("The discord api key seems invalid, closing program...")
-        print(f"Maybe bad internet?")
-        input("Press Enter to exit...")
-        exit()
-    elif Tokenverif.DPL_token(Deepl_api_key) == False :
-        print("The deepl api key seems invalid ! Translation quality will lessen.")
-        logging.warning("The deepl api key seems invalid. Not critical, just less quality. Continuing...")
-        print(f"Maybe bad internet?")
+        if Tokenverif.DS_token(Discord_api_key) == False :
+            print("The discord api key seems invalid")
+            logging.critical("The discord api key seems invalid, closing program...")
+            print(f"Maybe bad internet?")
+            input("Press Enter to exit...")
+            exit()
+        elif Tokenverif.DPL_token(Deepl_api_key) == False :
+            print("The deepl api key seems invalid ! Translation quality will lessen.")
+            logging.warning("The deepl api key seems invalid. Not critical, just less quality. Continuing...")
+            print(f"Maybe bad internet?")
 
-    del Tokenverif
+        del Tokenverif
+    else:
+        logging.info("Docker mode: skipping token verification")
     
     # Initialize Deepl and Google translators
     Deepl_translator = deepl.Translator(Deepl_api_key)
@@ -523,8 +536,26 @@ del check_for_update
 config_init()
 Config.read(Config_file)
 
+# Initialize token variables
+Discord_api_key = None
+Deepl_api_key = None
+Selected_bot = None
+
 # Parse CLI arguments for auto-config selection
-if FORCE_NEW_CONFIG:
+if DOCKER_FLAG:
+    # Docker mode: read tokens from environment variables
+    Discord_api_key = os.getenv("DISCORD_TOKEN")
+    Deepl_api_key = os.getenv("DEEPL_API_KEY")
+    
+    if not Discord_api_key or not Deepl_api_key:
+        print("Error: DISCORD_TOKEN and DEEPL_API_KEY environment variables must be set in Docker mode.")
+        logging.critical("Missing required env vars in Docker mode")
+        exit(1)
+    
+    Selected_bot = "docker-mode"
+    logging.info("Docker mode: using environment variables for tokens")
+    
+elif FORCE_NEW_CONFIG:
     logging.info("Using CLI flag to force creation of a new config.")
     setup_environment(force_new_config=True)
 elif CLI_CONFIG_NAME:
@@ -538,7 +569,7 @@ elif CLI_CONFIG_NAME:
 else:
     setup_environment()
 
-bot_bootup(Selected_bot,Config_file,Config)
+bot_bootup(Selected_bot, Config_file, Config, docker_mode=DOCKER_FLAG, docker_tokens=(Discord_api_key if DOCKER_FLAG else None, Deepl_api_key if DOCKER_FLAG else None))
 Dashboard_state = Dashboard.DashboardState(state_path=pathlib.Path(__file__).parent / "dashboard_state.json")
 Dashboard_state.load_from_file()
 del bot_picker

@@ -33,11 +33,7 @@ USER atbot
 # Set working directory back to Files for config access
 WORKDIR /app/Files
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1 || true
-
 # Run the bot in Docker mode
-# Expects DISCORD_TOKEN and DEEPL_API_KEY env vars, plus optional --config=NAME or --new-config
+# Expects DISCORD_TOKEN and DEEPL_API_KEY env vars
 ENTRYPOINT ["python", "-u", "AT_bot.py", "--docker"]
 CMD []
